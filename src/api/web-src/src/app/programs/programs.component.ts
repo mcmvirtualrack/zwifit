@@ -6,12 +6,19 @@ import { Program, ProgramDay, ProgramGoal, ProgramInput, ProgramSummary } from '
 import { PrefsService } from '../core/prefs.service';
 import { SocketService } from '../core/socket.service';
 import { ToastService } from '../core/toast.service';
-import { fromDisplaySpeed, displaySpeed } from '../core/units';
+import { fromDisplaySpeed, displaySpeed, formatDuration, parseDuration } from '../core/units';
 import { expandPlan } from '../core/plan-profile.service';
 
-const GOALS: { value: ProgramGoal; label: string }[] = [
-	{ value: '5k', label: '5K' }, { value: '10k', label: '10K' }, { value: 'half', label: 'Half marathon' }, { value: 'marathon', label: 'Marathon' }
+// Race distance and a starting target time (a steady recreational finish) for each goal.
+const GOALS: { value: ProgramGoal; label: string; metres: number; defaultSeconds: number }[] = [
+	{ value: '5k', label: '5K', metres: 5000, defaultSeconds: 30 * 60 },
+	{ value: '10k', label: '10K', metres: 10000, defaultSeconds: 60 * 60 },
+	{ value: 'half', label: 'Half marathon', metres: 21097, defaultSeconds: 2 * 3600 + 15 * 60 },
+	{ value: 'marathon', label: 'Marathon', metres: 42195, defaultSeconds: 4 * 3600 + 45 * 60 }
 ];
+const MIN_TARGET = 600;
+const MAX_TARGET = 36000;
+type PaceFrom = 'time' | 'easy';
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DEFAULT_WEEKS = 16;
 const PHASE_LABELS: Record<ProgramDay['phase'], string> = { base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper' };
@@ -43,7 +50,7 @@ export const daySeconds = (day: ProgramDay) => expandPlan({ items: day.items } a
 					<li class="card program-card">
 						<div class="program-card__main">
 							<h2 class="plan-card__name"><a [routerLink]="['/programs', p.id]">{{ p.name }}</a></h2>
-							<div class="muted">Race {{ p.raceDate | date: 'EEE d MMM y' }} · {{ p.weeks }} weeks · {{ p.done }} of {{ p.runs }} runs done</div>
+							<div class="muted">Race {{ p.raceDate | date: 'EEE d MMM y' }}@if (p.targetSeconds) {<span> · {{ p.targetFrom === 'time' ? 'Target' : 'Trains for' }} {{ prefs.duration(p.targetSeconds) }}</span>} · {{ p.weeks }} weeks · {{ p.done }} of {{ p.runs }} runs done</div>
 							<div class="progress" role="progressbar" [attr.aria-valuenow]="p.done" aria-valuemin="0" [attr.aria-valuemax]="p.runs" [attr.aria-label]="p.name + ' progress'">
 								<span class="progress__bar" [style.width.%]="p.runs ? (p.done / p.runs) * 100 : 0"></span>
 							</div>
@@ -56,12 +63,12 @@ export const daySeconds = (day: ProgramDay) => expandPlan({ items: day.items } a
 
 		<section class="card stack" aria-labelledby="new-program-title">
 			<h2 class="card__title" id="new-program-title">New program</h2>
-			<p class="muted">Pick a goal and race date; Zwifit builds a week-by-week schedule of treadmill runs (easy, hills, intervals, tempo, long runs and a taper), each with its speeds and inclines. Start each day's run from the program.</p>
+			<p class="muted">Pick a goal, race date and target finish time; Zwifit builds a week-by-week schedule of treadmill runs (easy, hills, intervals, tempo, long runs and a taper), each with its speeds and inclines. Start each day's run from the program.</p>
 			<div class="field">
 				<span class="field__label" id="goal-label">Goal</span>
 				<div class="segmented" role="group" aria-labelledby="goal-label">
 					@for (g of goals; track g.value) {
-						<button type="button" [attr.aria-pressed]="goal() === g.value" (click)="goal.set(g.value)">{{ g.label }}</button>
+						<button type="button" [attr.aria-pressed]="goal() === g.value" (click)="setGoal(g.value)">{{ g.label }}</button>
 					}
 				</div>
 			</div>
@@ -72,9 +79,23 @@ export const daySeconds = (day: ProgramDay) => expandPlan({ items: day.items } a
 					<input class="input" type="date" [min]="today" [ngModel]="raceDate()" (ngModelChange)="raceDate.set($event)"></label>
 				<label class="field"><span class="field__label">Name (optional)</span>
 					<input class="input" maxlength="60" [placeholder]="preview()?.name ?? ''" [ngModel]="name()" (ngModelChange)="name.set($event)"></label>
-				<label class="field"><span class="field__label">Easy run speed ({{ prefs.speedLabel() }})</span>
-					<input class="input num" type="number" step="0.1" min="2" max="20" [ngModel]="easySpeed()" (ngModelChange)="easySpeed.set($event)">
-					<span class="field__hint">A relaxed, conversational speed ({{ prefs.pace(easyKph()) }}). Harder runs are faster multiples of it.</span></label>
+				<div class="field">
+					<span class="field__label" id="pace-from-label">Set paces from</span>
+					<div class="segmented" role="group" aria-labelledby="pace-from-label">
+						<button type="button" [attr.aria-pressed]="paceFrom() === 'time'" (click)="setPaceFrom('time')">Target finish time</button>
+						<button type="button" [attr.aria-pressed]="paceFrom() === 'easy'" (click)="setPaceFrom('easy')">Easy run speed</button>
+					</div>
+				</div>
+				@if (paceFrom() === 'time') {
+					<label class="field"><span class="field__label">Target finish time (h:mm:ss)</span>
+						<input class="input num" inputmode="numeric" placeholder="1:45:00" [ngModel]="targetText()" (ngModelChange)="setTargetText($event)">
+						<span class="field__hint">{{ targetHint() }}</span></label>
+				}
+				@else {
+					<label class="field"><span class="field__label">Easy run speed ({{ prefs.speedLabel() }})</span>
+						<input class="input num" type="number" step="0.1" min="2" max="20" [ngModel]="easySpeed()" (ngModelChange)="easySpeed.set($event)">
+						<span class="field__hint">A relaxed, conversational speed ({{ prefs.pace(easyKph()) }}). Harder runs are faster multiples of it.{{ predictedHint() }}</span></label>
+				}
 				<label class="field"><span class="field__label">Base incline (%)</span>
 					<input class="input num" type="number" step="0.5" min="0" max="15" [ngModel]="incline()" (ngModelChange)="incline.set($event)">
 					<span class="field__hint">1 % feels like running outdoors. Hill sessions add 4 %.</span></label>
@@ -132,20 +153,44 @@ export class ProgramsComponent {
 	protected readonly runDays = signal<number[]>([1, 3, 5, 6]);
 	protected readonly incline = signal(1);
 	protected readonly easySpeed = signal<number | null>(null);
+	protected readonly paceFrom = signal<PaceFrom>('time');
+	protected readonly targetText = signal(formatDuration(GOALS.find(g => g.value === 'half')!.defaultSeconds));
+	// Once the user types a target, changing the goal no longer replaces it.
+	private targetEdited = false;
 	protected readonly preview = signal<Program | null>(null);
 	protected readonly problem = signal<string | null>(null);
 	protected readonly busy = signal(false);
 
 	protected readonly easyKph = computed(() => fromDisplaySpeed(Number(this.easySpeed()) || 0, this.prefs.metric()));
+	protected readonly targetSeconds = computed(() => parseDuration(this.targetText() ?? ''));
+	private readonly goalInfo = computed(() => GOALS.find(g => g.value === this.goal())!);
 	private readonly input = computed<ProgramInput>(() => ({
 		goal: this.goal(),
 		weeks: Math.round(Number(this.weeks())),
 		raceDate: this.raceDate(),
 		runDays: this.runDays(),
-		easyKph: Math.round(this.easyKph() * 10) / 10,
+		...(this.paceFrom() === 'time'
+			? { targetSeconds: this.targetSeconds() ?? 0 }
+			: { easyKph: Math.round(this.easyKph() * 10) / 10 }),
 		incline: Number(this.incline()) || 0,
 		...(this.name().trim() ? { name: this.name().trim() } : {})
 	}));
+
+	// "Race pace 5:00 /km · easy runs 10.2 km/h", from the preview the server built.
+	protected readonly targetHint = computed(() => {
+		const seconds = this.targetSeconds();
+		if (!seconds) {
+			return 'Your goal for race day, e.g. 25:00 or 1:45:00. Every run\'s speed is set from it.';
+		}
+		const raceKph = this.goalInfo().metres / seconds * 3.6;
+		const easy = this.preview()?.easyKph;
+		return `Race pace ${this.prefs.pace(raceKph)}${easy ? ` · easy runs ${this.prefs.speed(easy)}` : ''}. Every run's speed is set from it.`;
+	});
+
+	protected readonly predictedHint = computed(() => {
+		const p = this.preview();
+		return p?.targetSeconds && p.targetFrom === 'easy' ? ` Trains for a ${this.goalInfo().label} in about ${this.prefs.duration(p.targetSeconds)}.` : '';
+	});
 
 	protected readonly weekRows = computed(() => {
 		const program = this.preview();
@@ -211,10 +256,40 @@ export class ProgramsComponent {
 		if (input.runDays.length < 3 || input.runDays.length > 6) {
 			return 'Pick 3 to 6 run days.';
 		}
-		if (!(input.easyKph >= 3 && input.easyKph <= 20)) {
+		if (input.targetSeconds !== undefined) {
+			if (!(input.targetSeconds >= MIN_TARGET && input.targetSeconds <= MAX_TARGET)) {
+				return 'Enter a target finish time between 10:00 and 10:00:00, like 25:00 or 1:45:00.';
+			}
+		}
+		else if (!(input.easyKph! >= 3 && input.easyKph! <= 20)) {
 			return `Easy run speed must be between ${this.prefs.speed(3)} and ${this.prefs.speed(20)}.`;
 		}
 		return null;
+	}
+
+	protected setTargetText(value: string): void {
+		this.targetEdited = true;
+		this.targetText.set(value);
+	}
+
+	// Switching keeps the paces close: a typed easy speed becomes the time it trains for, and back.
+	protected setPaceFrom(from: PaceFrom): void {
+		const p = this.preview();
+		if (from === 'time' && p?.targetSeconds) {
+			this.targetText.set(formatDuration(p.targetSeconds));
+			this.targetEdited = true;
+		}
+		else if (from === 'easy' && p?.easyKph) {
+			this.easySpeed.set(Math.round(displaySpeed(p.easyKph, this.prefs.metric()) * 10) / 10);
+		}
+		this.paceFrom.set(from);
+	}
+
+	protected setGoal(goal: ProgramGoal): void {
+		this.goal.set(goal);
+		if (!this.targetEdited) {
+			this.targetText.set(formatDuration(this.goalInfo().defaultSeconds));
+		}
 	}
 
 	protected setWeeks(value: number): void {

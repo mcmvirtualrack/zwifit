@@ -142,17 +142,48 @@ async function createApp({
 	const bleSensors = disableSensors ? null : new BleSensors({ getSettings });
 	const sensors = antSensors || bleSensors ? new SensorHub({ ant: antSensors, bluetooth: bleSensors }) : null;
 	const treadmill = new MergedTreadmill({ treadmill: adapter, sensors, getSettings });
-	if (antSensors) {
-		let lastAnt = '';
-		antSensors.on('status', s => {
-			const line = s.available ? 'ANT+ stick ready, listening for heart rate and footpod' : `ANT+ unavailable: ${s.reason}`;
-			if (line !== lastAnt) {
-				lastAnt = line;
-				(s.available ? log.info : log.warn)(line);
+	// One console line per change of state (statuses repeat often). describe(s) returns
+	// { ok, line }, or null while still starting.
+	const logStatus = (emitter, describe, { now = false } = {}) => {
+		let last = '';
+		const show = s => {
+			const entry = describe(s);
+			if (entry && entry.line !== last) {
+				last = entry.line;
+				(entry.ok ? log.info : log.warn)(entry.line);
 			}
-		});
+		};
+		emitter.on('status', show);
+		if (now) {
+			show(emitter.status());
+		}
+	};
+	const starting = reason => reason === 'Starting Bluetooth…' || reason === 'Starting…';
+	if (antSensors) {
+		logStatus(antSensors, s => s.available
+			? { ok: true, line: 'ANT+ stick ready, listening for heart rate and footpod' }
+			: { ok: false, line: `ANT+ unavailable: ${s.reason}` });
+	}
+	if (bleSensors) {
+		// Bluetooth sensors are only looked for once one has been chosen (Settings → Sensors).
+		logStatus(bleSensors, s => {
+			if (s.reason) {
+				return starting(s.reason) ? null : { ok: false, line: `Bluetooth sensors unavailable: ${s.reason}` };
+			}
+			const names = (s.connections || []).map(c => c.name || c.id);
+			return names.length
+				? { ok: true, line: `Bluetooth ready, listening for sensors: ${names.join(', ')}` }
+				: { ok: true, line: 'Bluetooth sensors: none chosen yet (Settings → Sensors → Scan for sensors)' };
+		}, { now: true });
 	}
 	const broadcast = createBroadcast(settings, { disableBroadcast });
+	logStatus(broadcast, s => {
+		if (s.advertising) {
+			const clients = s.clients ? `, ${s.clients} Zwift device(s) connected` : ', waiting for Zwift to connect';
+			return { ok: true, line: `Bluetooth broadcast ready, advertising as "Zwifit"${clients}` };
+		}
+		return !s.reason || starting(s.reason) ? null : { ok: false, line: `Bluetooth broadcast unavailable: ${s.reason}` };
+	});
 	const limits = () => effectiveLimits(settingsRepo.get().limits, treadmill.limits());
 
 	const plansRepo = createPlansRepo({ dir: dataDir, getLimits: limits });

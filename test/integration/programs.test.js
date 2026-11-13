@@ -66,3 +66,38 @@ test('delete removes the program but keeps plans already made from it', async ()
 	expect((await ctx.emit(client.socket, 'programs:list')).data).toEqual([]);
 	expect(ctx.app.plansRepo.has(planId)).toBe(true);
 });
+
+describe('target finish time', () => {
+	const byTime = (over = {}) => {
+		const { easyKph, ...rest } = input(over);
+		return { ...rest, targetSeconds: 3000, ...over };
+	};
+
+	test('a program from a target time keeps it, and lists it', async () => {
+		const created = (await ctx.emit(client.socket, 'programs:create', byTime())).data;
+		expect(created).toMatchObject({ targetSeconds: 3000, targetFrom: 'time' });
+		expect((await ctx.emit(client.socket, 'programs:list')).data[0]).toMatchObject({ targetSeconds: 3000, targetFrom: 'time' });
+		expect((await ctx.emit(client.socket, 'programs:get', { id: created.id })).data).toMatchObject({ targetSeconds: 3000 });
+	});
+
+	test('from an easy speed, the predicted finish time is reported', async () => {
+		const preview = (await ctx.emit(client.socket, 'programs:preview', input())).data;
+		expect(preview).toMatchObject({ targetFrom: 'easy', targetSeconds: expect.any(Number) });
+	});
+
+	test('both an easy speed and a target time, or neither, is refused', async () => {
+		expect(await ctx.emit(client.socket, 'programs:preview', { ...input(), targetSeconds: 3000 })).toMatchObject({ ok: false, error: 'INVALID' });
+		const { easyKph, ...neither } = input();
+		expect(await ctx.emit(client.socket, 'programs:preview', neither)).toMatchObject({ ok: false, error: 'INVALID' });
+	});
+
+	test('malformed or impossible targets are refused', async () => {
+		for (const targetSeconds of [0, -60, 599, 36001, 3000.5, '3000']) {
+			expect(await ctx.emit(client.socket, 'programs:preview', byTime({ targetSeconds }))).toMatchObject({ ok: false, error: 'INVALID' });
+		}
+		// A 10K in 10 minutes needs 60 km/h.
+		const tooFast = await ctx.emit(client.socket, 'programs:preview', byTime({ targetSeconds: 600 }));
+		expect(tooFast).toMatchObject({ ok: false, error: 'INVALID' });
+		expect(JSON.stringify(tooFast)).toContain('TOO_FAST');
+	});
+});

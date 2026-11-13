@@ -2,7 +2,7 @@
 
 <div class="conn-row" aria-label="Connections">
 	@for (c of connections(); track c.label) {
-		<span class="pill" [class]="'pill pill--' + c.tone"><span class="pill__dot"></span>{{ c.label }}</span>
+		<span class="pill" [class]="'pill pill--' + c.tone" [attr.title]="c.title ?? null"><span class="pill__dot"></span>{{ c.label }}</span>
 	}
 </div>
 

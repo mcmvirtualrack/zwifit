@@ -1,24 +1,83 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://zwifit.local/schemas/programs-input.json",
-  "description": "What a training program is generated from (programs:preview, programs:create).",
+  "description": "What a training program is generated from (programs:preview, programs:create). Paces come from exactly one of easyKph or targetSeconds (a goal finish time).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["goal", "weeks", "raceDate", "runDays", "easyKph"],
+  "required": [
+    "goal",
+    "weeks",
+    "raceDate",
+    "runDays"
+  ],
   "properties": {
-    "goal": { "enum": ["5k", "10k", "half", "marathon"] },
-    "weeks": { "type": "integer", "minimum": 6, "maximum": 24 },
-    "raceDate": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "goal": {
+      "enum": [
+        "5k",
+        "10k",
+        "half",
+        "marathon"
+      ]
+    },
+    "weeks": {
+      "type": "integer",
+      "minimum": 6,
+      "maximum": 24
+    },
+    "raceDate": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
     "runDays": {
-      "description": "Weekdays to run, Monday = 0 … Sunday = 6.",
+      "description": "Weekdays to run, Monday = 0 \u2026 Sunday = 6.",
       "type": "array",
       "minItems": 3,
       "maxItems": 6,
       "uniqueItems": true,
-      "items": { "type": "integer", "minimum": 0, "maximum": 6 }
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 6
+      }
     },
-    "easyKph": { "type": "number", "minimum": 3, "maximum": 20 },
-    "incline": { "type": "number", "minimum": 0, "maximum": 15 },
-    "name": { "type": "string", "minLength": 1, "maxLength": 60 }
-  }
+    "easyKph": {
+      "type": "number",
+      "minimum": 3,
+      "maximum": 20
+    },
+    "targetSeconds": {
+      "description": "Goal finish time for the race distance, in seconds (10 min to 10 h).",
+      "type": "integer",
+      "minimum": 600,
+      "maximum": 36000
+    },
+    "incline": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 15
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "easyKph": true
+      },
+      "required": [
+        "easyKph"
+      ]
+    },
+    {
+      "properties": {
+        "targetSeconds": true
+      },
+      "required": [
+        "targetSeconds"
+      ]
+    }
+  ]
 }

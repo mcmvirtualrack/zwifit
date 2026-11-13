@@ -1,7 +1,7 @@
 // Training programs (contracts/api.md): programs:preview|create|list|get|delete|start, and
 // programs:changed. A day is done once a workout of its plan completed.
 const { AppError } = require('../../lib/errors');
-const { generateProgram } = require('../../core/programs/generate');
+const { generateProgram, targetOf } = require('../../core/programs/generate');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_AHEAD_MS = 2 * 365 * DAY_MS;
@@ -37,7 +37,7 @@ function registerPrograms({ server, programsRepo, plansRepo, workoutsRepo, engin
 
 	function summary(program) {
 		const done = withProgress(program).days.filter(d => d.done).length;
-		return { id: program.id, name: program.name, goal: program.goal, weeks: program.weeks, raceDate: program.raceDate, startDate: program.startDate, runs: program.days.length, done };
+		return { id: program.id, name: program.name, goal: program.goal, weeks: program.weeks, raceDate: program.raceDate, startDate: program.startDate, runs: program.days.length, done, ...targetOf(program) };
 	}
 
 	server.handle('programs:preview', 'programs-input', ({ payload }) => generate(payload));
@@ -47,7 +47,10 @@ function registerPrograms({ server, programsRepo, plansRepo, workoutsRepo, engin
 		return program;
 	});
 	server.handle('programs:list', null, () => programsRepo.list().map(summary));
-	server.handle('programs:get', 'programs-id', ({ payload }) => withProgress(programsRepo.get(payload.id)));
+	server.handle('programs:get', 'programs-id', ({ payload }) => {
+		const program = programsRepo.get(payload.id);
+		return withProgress({ ...program, ...targetOf(program) });
+	});
 	server.handle('programs:delete', 'programs-id', async ({ payload }) => {
 		await programsRepo.remove(payload.id);
 		changed(payload.id, true);

@@ -21,7 +21,7 @@ type DayState = 'done' | 'missed' | 'today' | 'upcoming';
 				<a class="btn" routerLink="/programs">All programs</a>
 				<button class="btn btn--ghost btn--danger-text" type="button" (click)="remove(p)">Delete</button>
 			</div>
-			<p class="muted">Race {{ p.raceDate | date: 'EEEE d MMMM y' }} · {{ p.weeks }} weeks from {{ p.startDate | date: 'd MMM' }} · {{ doneCount() }} of {{ p.days.length }} runs done</p>
+			<p class="muted">Race {{ p.raceDate | date: 'EEEE d MMMM y' }}@if (p.targetSeconds) {<span> · {{ p.targetFrom === 'time' ? 'Target' : 'Trains for' }} {{ prefs.duration(p.targetSeconds) }}</span>} · {{ p.weeks }} weeks from {{ p.startDate | date: 'd MMM' }} · {{ doneCount() }} of {{ p.days.length }} runs done</p>
 			@if (planRunning()) {
 				<div class="banner banner--accent" role="status">A plan is running. <a routerLink="/workout">Open workout</a></div>
 			}

@@ -95,16 +95,20 @@ export class ControlComponent {
 		}
 		const t = status.treadmill;
 		const transport = { wifi: 'Wi-Fi', ble: 'Bluetooth', simulated: 'Simulated' }[t.transport] ?? t.transport;
-		const pills: { label: string; tone: string }[] = [
+		const pills: { label: string; tone: string; title?: string }[] = [
 			{ label: t.connected ? `Treadmill · ${transport}` : 'Treadmill · not connected', tone: t.connected ? 'ok' : 'warn' }
 		];
 		if (t.power) {
 			pills.push({ label: `Power · ${this.sourceName(t.powerSource)}`, tone: 'power' });
 		}
 		const b = status.broadcast;
+		// The Bluetooth broadcast to Zwift: broadcasting means Zwift can find "Zwifit" and pair.
 		pills.push({
-			label: b.clients > 0 ? `Zwift · ${b.clients} connected` : b.advertising ? 'Zwift · waiting' : 'Zwift · off',
-			tone: b.clients > 0 ? 'ok' : b.advertising ? 'idle' : 'warn'
+			label: b.clients > 0 ? `Bluetooth → Zwift · ${b.clients} connected` : b.advertising ? 'Bluetooth → Zwift · broadcasting' : 'Bluetooth → Zwift · off',
+			tone: b.clients > 0 || b.advertising ? 'ok' : 'warn',
+			title: b.clients > 0 ? 'Zwift is paired with Zwifit over Bluetooth.'
+				: b.advertising ? 'Broadcasting as "Zwifit" over Bluetooth, waiting for Zwift to pair.'
+				: b.reason ?? 'The Bluetooth broadcast is not running.'
 		});
 		const ant = status.sensors?.ant;
 		if (ant?.available) {
@@ -112,10 +116,22 @@ export class ControlComponent {
 			const kinds = [...new Set(ant.devices.filter(d => Date.parse(d.lastSeenAt) > Date.now() - 10000).map(d => names[d.kind]))];
 			pills.push({ label: `ANT+ · ${kinds.length ? kinds.join(' + ') : 'listening'}`, tone: kinds.length ? 'ok' : 'idle' });
 		}
-		const ble = status.sensors?.bluetooth?.connections ?? [];
-		if (ble.length) {
+		// Bluetooth sensors (strap, Stryd, footpod): only looked for once one is chosen in Settings.
+		const bleStatus = status.sensors?.bluetooth;
+		const ble = bleStatus?.connections ?? [];
+		if (bleStatus && !bleStatus.available) {
+			pills.push({ label: 'Bluetooth sensors · unavailable', tone: 'warn', title: bleStatus.reason ?? 'Bluetooth sensors cannot be used.' });
+		}
+		else if (ble.length) {
 			const on = ble.filter(c => c.state === 'connected');
-			pills.push({ label: `Bluetooth · ${on.length ? on.map(c => c.name || 'sensor').join(', ') : 'searching'}`, tone: on.length ? 'ok' : 'idle' });
+			pills.push({
+				label: `Bluetooth sensors · ${on.length ? on.map(c => c.name || 'sensor').join(', ') : 'listening'}`,
+				tone: on.length ? 'ok' : 'idle',
+				title: on.length ? 'Connected over Bluetooth.' : `Listening for ${ble.map(c => c.name || 'sensor').join(', ')}.`
+			});
+		}
+		else if (bleStatus) {
+			pills.push({ label: 'Bluetooth sensors · none chosen', tone: 'idle', title: 'To use a Bluetooth sensor, open Settings → Sensors → Scan for sensors.' });
 		}
 		return pills;
 	});

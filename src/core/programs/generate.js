@@ -5,6 +5,11 @@
 // Shape: base (aerobic, hills) → build (intervals, tempo) → peak (race-specific) → taper; every
 // 4th week before the taper is an easier recovery week. Speeds are multiples of the easy speed
 // and are clamped to the treadmill's limits.
+//
+// Paces come from either an easy speed or a target finish time. A target time sets race pace to
+// distance ÷ time exactly and the easy speed is derived from it; a target the treadmill cannot
+// run is refused (never capped). From an easy speed, the program reports the time it trains for.
+const { AppError } = require('../../lib/errors');
 
 const GOALS = {
 	'5k': { label: '5K', metres: 5000, race: 1.33, easy: [30, 40], long: [40, 60], tempo: [15, 25], interval: { work: 180, rest: 120, reps: [5, 8] }, taperWeeks: 1 },
@@ -18,6 +23,8 @@ const PACE = { recovery: 0.85, warm: 0.9, easy: 1, long: 0.97, tempo: 1.2, inter
 const HILL_EXTRA_INCLINE = 4;
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DAY_MS = 24 * 60 * 60 * 1000;
+const MIN_EASY_KPH = 3;
+const MAX_EASY_KPH = 20;
 
 const lerp = ([from, to], p) => from + (to - from) * p;
 const roundTo = (value, step) => Math.round(value / step) * step;
@@ -79,7 +86,7 @@ function createBuilder({ easyKph, incline, limits }) {
 }
 
 function workout(type, ctx) {
-	const { goal, p, volume, b } = ctx;
+	const { goal, p, volume, b, race } = ctx;
 	const minutes = m => Math.max(Math.round(m * volume), 10) * 60;
 	const warm = () => b.step('Warm up', PACE.warm, 600);
 	const cool = () => b.step('Cool down', PACE.recovery, 300);
@@ -118,10 +125,10 @@ function workout(type, ctx) {
 		}
 		case 'racePace': {
 			const seconds = minutes(lerp(goal.tempo, p) * 1.2);
-			return { title: 'Race pace', description: `${Math.round(seconds / 60)} min at goal race pace.`, items: [warm(), b.step('Race pace', goal.race, seconds), cool()] };
+			return { title: 'Race pace', description: `${Math.round(seconds / 60)} min at goal race pace.`, items: [warm(), b.step('Race pace', race, seconds), cool()] };
 		}
 		case 'race':
-			return { title: `Race: ${goal.label}`, description: 'Race day. Skip it here if you race outdoors.', items: [b.step('Warm up', PACE.warm, 600), b.distance(goal.label, goal.race, goal.metres)] };
+			return { title: `Race: ${goal.label}`, description: 'Race day. Skip it here if you race outdoors.', items: [b.step('Warm up', PACE.warm, 600), b.distance(goal.label, race, goal.metres)] };
 		case 'shakeout':
 			return { title: 'Shake-out', description: 'Short and easy with a few strides.', items: [b.step('Easy', PACE.easy, 1200), b.block('Strides', 4, [b.step('Stride', PACE.stride, 20), b.step('Jog', PACE.recovery, 60)])] };
 		default:
@@ -146,14 +153,48 @@ function typeFor(slot, phase, recoveryWeek) {
 	return table[phase][slot];
 }
 
-// input: { goal, weeks, raceDate: "YYYY-MM-DD", runDays: [0-6, Monday = 0], easyKph, incline? }
+// input: { goal, weeks, raceDate: "YYYY-MM-DD", runDays: [0-6, Monday = 0], easyKph | targetSeconds, incline? }
 // limits: the treadmill's { minKph, maxKph, minIncline, maxIncline }.
+const invalid = (code, message) => new AppError('INVALID', message, [{ path: 'targetSeconds', code, message }]);
+
+const clock = seconds => {
+	const s = Math.round(seconds);
+	const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+	return `${Math.floor(s / 3600)}:${mm}:${String(s % 60).padStart(2, '0')}`;
+};
+
+// { easyKph, race } where race is the multiple of easyKph that runs the goal at the target time.
+function pacesFromTarget(goal, targetSeconds, limits) {
+	const raceKph = goal.metres / targetSeconds * 3.6;
+	if (roundTo(raceKph, 0.1) > limits.maxKph) {
+		throw invalid('TOO_FAST', `A ${goal.label} in ${clock(targetSeconds)} needs ${raceKph.toFixed(1)} km/h, faster than this treadmill's top speed of ${limits.maxKph} km/h.`);
+	}
+	const easyKph = roundTo(raceKph / goal.race, 0.1);
+	if (easyKph < Math.max(MIN_EASY_KPH, limits.minKph || 0) || easyKph > MAX_EASY_KPH) {
+		throw invalid('TOO_SLOW', `A ${goal.label} in ${clock(targetSeconds)} gives easy runs too slow to plan; pick a faster target.`);
+	}
+	return { easyKph: Number(easyKph.toFixed(1)), race: raceKph / easyKph };
+}
+
+// The finish time a program trains for: as entered, or from its race-day speed (older programs).
+function targetOf(program) {
+	if (program.targetSeconds) {
+		return { targetSeconds: program.targetSeconds, targetFrom: program.targetFrom || 'time' };
+	}
+	const goal = GOALS[program.goal];
+	const raceDay = (program.days || []).find(d => d.type === 'race');
+	const step = raceDay && raceDay.items.find(i => i.end && i.end.type === 'distance');
+	return step && goal ? { targetSeconds: Math.round(goal.metres / (step.targetKph / 3.6)), targetFrom: 'easy' } : null;
+}
+
 function generateProgram(input, limits) {
 	const goal = GOALS[input.goal];
 	const weeks = input.weeks;
 	const runDays = [...new Set(input.runDays)].sort((a, b) => a - b);
 	const sessions = sessionsFor(runDays.length);
-	const b = createBuilder({ easyKph: input.easyKph, incline: input.incline ?? 1, limits });
+	const fromTime = input.targetSeconds !== undefined && input.targetSeconds !== null;
+	const { easyKph, race: raceFactor } = fromTime ? pacesFromTarget(goal, input.targetSeconds, limits) : { easyKph: input.easyKph, race: goal.race };
+	const b = createBuilder({ easyKph, incline: input.incline ?? 1, limits });
 
 	const race = toDate(input.raceDate);
 	// Week 1 starts on the Monday (weeks - 1) weeks before the race week's Monday.
@@ -179,26 +220,29 @@ function generateProgram(input, limits) {
 				const isRace = isoDay(date) === input.raceDate;
 				type = isRace ? 'race' : sessions[i] === 'long' || i === runDays.length - 1 ? 'shakeout' : type === 'intervals' ? 'tempo' : 'easy';
 			}
-			const w = workout(type, { goal, p, volume: raceWeek ? 0.5 : volume, b });
+			const w = workout(type, { goal, p, volume: raceWeek ? 0.5 : volume, b, race: raceFactor });
 			days.push({ date: isoDay(date), week, weekday: DAY_NAMES[weekday], type, phase, ...w });
 		});
 		if (raceWeek && !runDays.includes(weekdayOf(race))) {
-			const w = workout('race', { goal, p: 1, volume: 1, b });
+			const w = workout('race', { goal, p: 1, volume: 1, b, race: raceFactor });
 			days.push({ date: input.raceDate, week, weekday: DAY_NAMES[weekdayOf(race)], type: 'race', phase, ...w });
 		}
 	}
 	days.sort((a, c) => a.date.localeCompare(c.date));
-	return {
+	const program = {
 		name: `${goal.label} · ${weeks} weeks`,
 		goal: input.goal,
 		weeks,
 		raceDate: input.raceDate,
 		startDate: isoDay(start),
 		runDays,
-		easyKph: input.easyKph,
+		easyKph,
 		incline: input.incline ?? 1,
 		days
 	};
+	return fromTime
+		? { ...program, targetSeconds: input.targetSeconds, targetFrom: 'time' }
+		: { ...program, ...targetOf(program) };
 }
 
-module.exports = { generateProgram, GOALS, DAY_NAMES };
+module.exports = { generateProgram, targetOf, GOALS, DAY_NAMES };

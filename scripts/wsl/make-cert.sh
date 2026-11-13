@@ -5,7 +5,8 @@
 # tls/zwifit-ca.cer as a trusted root on them (e.g. a managed Edge on a Surface Hub, via Intune).
 # Then browsers treat https://<this PC>:<port> as secure, so "Install app" is offered and there
 # is no warning. Re-run this script whenever the PC's IP address changes: it issues a new server
-# certificate from the same CA, so devices need nothing new.
+# certificate from the same CA, so devices need nothing new. Custom DNS names in
+# ZWIFIT_ALLOWED_HOSTS (comma separated) are added to the certificate too.
 #
 # Usage: bash scripts/wsl/make-cert.sh   (then restart Zwifit)
 set -euo pipefail
@@ -31,6 +32,12 @@ host=$(hostname)
 san="DNS:localhost,DNS:$host,DNS:$host.local,IP:127.0.0.1"
 for ip in $(hostname -I); do
 	case "$ip" in *:*) ;; *) san="$san,IP:$ip" ;; esac
+done
+# Custom DNS names (the same list the server accepts in the Host header), comma separated.
+IFS=',' read -ra extra <<< "${ZWIFIT_ALLOWED_HOSTS:-}"
+for name in "${extra[@]}"; do
+	name=$(echo "$name" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+	[ -n "$name" ] && san="$san,DNS:$name"
 done
 
 cat > server.ext <<EOF

@@ -261,9 +261,17 @@ export interface ProgramInput {
 	weeks: number;
 	raceDate: string;
 	runDays: number[];
-	easyKph: number;
+	// Exactly one: an easy-run speed, or a goal finish time for the race distance.
+	easyKph?: number;
+	targetSeconds?: number;
 	incline?: number;
 	name?: string;
+}
+
+// The finish time a program trains for: entered by the user, or predicted from the easy speed.
+export interface ProgramTarget {
+	targetSeconds?: number;
+	targetFrom?: 'time' | 'easy';
 }
 
 export interface ProgramDay {
@@ -280,7 +288,7 @@ export interface ProgramDay {
 	workoutId?: string | null;
 }
 
-export interface Program {
+export interface Program extends ProgramTarget {
 	id?: string;
 	name: string;
 	goal: ProgramGoal;
@@ -292,7 +300,7 @@ export interface Program {
 	days: ProgramDay[];
 }
 
-export interface ProgramSummary {
+export interface ProgramSummary extends ProgramTarget {
 	id: string;
 	name: string;
 	goal: ProgramGoal;

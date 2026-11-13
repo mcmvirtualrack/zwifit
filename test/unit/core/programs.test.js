@@ -1,4 +1,4 @@
-const { generateProgram, GOALS } = require('../../../src/core/programs/generate');
+const { generateProgram, GOALS, targetOf } = require('../../../src/core/programs/generate');
 const { validatePlan } = require('../../../src/core/plans/validate');
 const { totals } = require('../../../src/core/plans/totals');
 
@@ -51,4 +51,51 @@ test('a race day that is not a run day is still added', () => {
 	const program = generateProgram({ ...half, raceDate: '2027-03-06', runDays: [1, 3, 6] }, LIMITS);
 	expect(program.days.at(-1)).toMatchObject({ date: '2027-03-06', type: 'race', weekday: 'Sat' });
 	expect(program.days.filter(d => d.date > '2027-03-06')).toEqual([]);
+});
+
+describe('target finish time', () => {
+	const raceStep = program => program.days.at(-1).items.find(i => i.end && i.end.type === 'distance');
+	const fromTime = { goal: 'half', weeks: 16, raceDate: '2027-03-07', runDays: [1, 3, 5, 6], targetSeconds: 6300 };
+
+	test('a target time sets race pace to distance ÷ time and derives the easy speed from it', () => {
+		const program = generateProgram(fromTime, LIMITS);
+		// 21.097 km in 1:45:00 = 12.06 km/h.
+		expect(raceStep(program).targetKph).toBe(12.1);
+		expect(program.easyKph).toBe(10.2);
+		expect(program).toMatchObject({ targetSeconds: 6300, targetFrom: 'time' });
+		const racePace = program.days.find(d => d.type === 'racePace');
+		expect(racePace.items.find(i => i.label === 'Race pace').targetKph).toBe(12.1);
+	});
+
+	test('from an easy speed, the program reports the finish time it trains for', () => {
+		const program = generateProgram(half, LIMITS);
+		// Easy 10 km/h → race pace 11.8 km/h → 21.097 km in 6436 s.
+		expect(raceStep(program).targetKph).toBe(11.8);
+		expect(program).toMatchObject({ targetSeconds: 6436, targetFrom: 'easy' });
+	});
+
+	test('a target faster than the treadmill can run is refused, not capped', () => {
+		expect(() => generateProgram({ ...fromTime, targetSeconds: 4000 }, { ...LIMITS, maxKph: 16 }))
+			.toThrow(expect.objectContaining({ code: 'INVALID', details: [expect.objectContaining({ path: 'targetSeconds', code: 'TOO_FAST' })] }));
+	});
+
+	test('a target so slow the easy runs would be under 3 km/h is refused', () => {
+		expect(() => generateProgram({ ...fromTime, goal: '5k', targetSeconds: 9000 }, LIMITS))
+			.toThrow(expect.objectContaining({ code: 'INVALID', details: [expect.objectContaining({ path: 'targetSeconds', code: 'TOO_SLOW' })] }));
+	});
+
+	test('every workout from a target time is a valid plan within the treadmill limits', () => {
+		for (const [goal, targetSeconds] of [['5k', 1500], ['10k', 3300], ['half', 7200], ['marathon', 14400]]) {
+			const program = generateProgram({ ...fromTime, goal, targetSeconds }, LIMITS);
+			for (const day of program.days) {
+				expect(validatePlan(asPlan(day), { limits: LIMITS })).toEqual([]);
+			}
+		}
+	});
+
+	test('targetOf: programs saved before targets existed get one from their race-day speed', () => {
+		const { targetSeconds, targetFrom, ...older } = generateProgram(half, LIMITS);
+		expect(targetOf(older)).toEqual({ targetSeconds: 6436, targetFrom: 'easy' });
+		expect(targetOf(generateProgram(fromTime, LIMITS))).toEqual({ targetSeconds: 6300, targetFrom: 'time' });
+	});
 });
