@@ -1,0 +1,343 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zwifit.local/schemas/plan-file.json",
+  "title": "Zwifit training plan file",
+  "description": "Shape of exported/imported plans and plans stored on disk. Speed/incline limits are checked separately against the effective treadmill limits.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "name",
+    "items"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "pattern": "^[^\u0000-\u001f]+$"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "authoredUnits": {
+      "enum": [
+        "metric",
+        "imperial"
+      ]
+    },
+    "controlIncline": {
+      "type": "boolean",
+      "description": "When false the plan never sends incline, so Zwift (or the console) keeps control of it. Default true."
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 200,
+      "items": {
+        "$ref": "#/$defs/item"
+      }
+    }
+  },
+  "$defs": {
+    "label": {
+      "type": "string",
+      "maxLength": 40,
+      "pattern": "^[^\u0000-\u001f]*$"
+    },
+    "localId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,32}$"
+    },
+    "item": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "step",
+            "block"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "step"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/step"
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "kind"
+            ],
+            "properties": {
+              "kind": {
+                "const": "block"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/block"
+          }
+        }
+      ]
+    },
+    "entered": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "form",
+        "unit",
+        "value"
+      ],
+      "properties": {
+        "form": {
+          "enum": [
+            "speed",
+            "pace"
+          ]
+        },
+        "unit": {
+          "enum": [
+            "mph",
+            "kph",
+            "min/mi",
+            "min/km"
+          ]
+        },
+        "value": {
+          "type": [
+            "number",
+            "string"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "form"
+            ],
+            "properties": {
+              "form": {
+                "const": "speed"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "unit": {
+                "enum": [
+                  "mph",
+                  "kph"
+                ]
+              },
+              "value": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 60
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "form"
+            ],
+            "properties": {
+              "form": {
+                "const": "pace"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "unit": {
+                "enum": [
+                  "min/mi",
+                  "min/km"
+                ]
+              },
+              "value": {
+                "type": "string",
+                "pattern": "^[0-9]{1,2}:[0-5][0-9]$"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "end": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "time",
+            "distance"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "time"
+              }
+            }
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": [
+              "seconds"
+            ],
+            "properties": {
+              "type": true,
+              "seconds": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 21600
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "distance"
+              }
+            }
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": [
+              "metres"
+            ],
+            "properties": {
+              "type": true,
+              "metres": {
+                "type": "number",
+                "minimum": 10,
+                "maximum": 100000
+              }
+            }
+          }
+        }
+      ]
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "id",
+        "targetKph",
+        "entered",
+        "targetIncline",
+        "end"
+      ],
+      "properties": {
+        "kind": {
+          "const": "step"
+        },
+        "id": {
+          "$ref": "#/$defs/localId"
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "targetKph": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 30
+        },
+        "entered": {
+          "$ref": "#/$defs/entered"
+        },
+        "targetIncline": {
+          "type": "number",
+          "minimum": -10,
+          "maximum": 40,
+          "multipleOf": 0.5
+        },
+        "end": {
+          "$ref": "#/$defs/end"
+        }
+      }
+    },
+    "block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "id",
+        "repeat",
+        "steps"
+      ],
+      "properties": {
+        "kind": {
+          "const": "block"
+        },
+        "id": {
+          "$ref": "#/$defs/localId"
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "repeat": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 99
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        }
+      }
+    }
+  }
+}

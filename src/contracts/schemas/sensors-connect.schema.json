@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zwifit.local/schemas/sensors-connect.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["transport", "id"],
+  "properties": {
+    "transport": { "enum": ["ant", "bluetooth"] },
+    "id": { "$ref": "settings.json#/$defs/sensorId" }
+  }
+}

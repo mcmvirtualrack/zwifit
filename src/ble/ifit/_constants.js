@@ -292,7 +292,7 @@ exports.Characteristic = function() {
 			converter: Converter.OneByteInteger,
 		},
 		'fromId': function(id) {
-			for (let [key, value] of Object.entries(characteristics)) {
+			for (const value of Object.values(characteristics)) {
 				if (value.id === id) {
 					return value;
 				}

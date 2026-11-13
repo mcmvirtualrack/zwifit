@@ -1,0 +1,164 @@
+<ng-template #stepFields let-step="step" let-path="path">
+	<div class="step-grid">
+		<label class="field">
+			<span class="field__label">Label</span>
+			<input class="input" [(ngModel)]="step.label" (ngModelChange)="changed()" maxlength="40" [attr.aria-invalid]="errorAt(path, 'label') ? 'true' : null">
+			@if (errorAt(path, 'label'); as e) { <span class="field__error">{{ e }}</span> }
+		</label>
+		<div class="field">
+			<span class="field__label" [id]="step.id + '-form'">Set by</span>
+			<div class="segmented" role="group" [attr.aria-labelledby]="step.id + '-form'">
+				<button type="button" [attr.aria-pressed]="step.form === 'speed'" (click)="setForm(step, 'speed')">Speed</button>
+				<button type="button" [attr.aria-pressed]="step.form === 'pace'" (click)="setForm(step, 'pace')">Pace</button>
+			</div>
+		</div>
+		<label class="field">
+			<span class="field__label">{{ step.form === 'speed' ? 'Speed' : 'Pace' }} ({{ speedUnitLabel(step) }})</span>
+			@if (step.form === 'speed') {
+				<input class="input num" type="number" inputmode="decimal" step="0.1" min="0" [(ngModel)]="step.speed" (ngModelChange)="changed()" [attr.aria-invalid]="errorAt(path, 'speed') ? 'true' : null">
+			}
+			@else {
+				<input class="input num" inputmode="numeric" placeholder="m:ss" [(ngModel)]="step.pace" (ngModelChange)="changed()" [attr.aria-invalid]="errorAt(path, 'speed') ? 'true' : null">
+			}
+			<span class="field__hint">{{ equivalent(step) }}</span>
+			@if (errorAt(path, 'speed'); as e) { <span class="field__error">{{ e }}</span> }
+		</label>
+		<label class="field">
+			<span class="field__label">Incline (%)</span>
+			<input class="input num" type="number" inputmode="decimal" step="0.5" [(ngModel)]="step.incline" (ngModelChange)="changed()" [attr.aria-invalid]="errorAt(path, 'incline') ? 'true' : null">
+			@if (errorAt(path, 'incline'); as e) { <span class="field__error">{{ e }}</span> }
+		</label>
+		<div class="field">
+			<span class="field__label" [id]="step.id + '-end'">Ends after</span>
+			<div class="segmented" role="group" [attr.aria-labelledby]="step.id + '-end'">
+				<button type="button" [attr.aria-pressed]="step.endType === 'time'" (click)="setEndType(step, 'time')">Time</button>
+				<button type="button" [attr.aria-pressed]="step.endType === 'distance'" (click)="setEndType(step, 'distance')">Distance</button>
+			</div>
+		</div>
+		<label class="field">
+			@if (step.endType === 'time') {
+				<span class="field__label">Time (h:mm:ss)</span>
+				<input class="input num" inputmode="numeric" placeholder="5:00" [(ngModel)]="step.duration" (ngModelChange)="changed()" [attr.aria-invalid]="errorAt(path, 'end') ? 'true' : null">
+			}
+			@else {
+				<span class="field__label">Distance ({{ step.distanceMetric ? 'km' : 'mi' }})</span>
+				<input class="input num" type="number" inputmode="decimal" step="0.01" min="0" [(ngModel)]="step.distance" (ngModelChange)="changed()" [attr.aria-invalid]="errorAt(path, 'end') ? 'true' : null">
+			}
+			<span class="field__hint">{{ stepSummary(step) }}</span>
+			@if (errorAt(path, 'end'); as e) { <span class="field__error">{{ e }}</span> }
+		</label>
+	</div>
+</ng-template>
+
+@if (loading()) {
+	<p class="empty">Loading…</p>
+}
+@else {
+	<div class="editor">
+		<div class="page-head">
+			<a class="btn btn--ghost" routerLink="/plans">← Back to plans</a>
+			<h1>{{ model().id ? 'Edit plan' : 'New plan' }}</h1>
+			<button class="btn" type="button" (click)="start()" [disabled]="planRunning() || saving()">Start</button>
+			<button class="btn btn--primary" type="button" (click)="save()" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save' }}</button>
+		</div>
+
+		@for (e of generalErrors(); track e.path + e.code) {
+			<div class="banner banner--danger" role="alert">{{ e.path ? e.path + ': ' : '' }}{{ e.message }}</div>
+		}
+
+		<section class="card editor__meta">
+			<label class="field">
+				<span class="field__label">Name</span>
+				<input class="input" name="name" [(ngModel)]="model().name" (ngModelChange)="changed()" maxlength="80" required placeholder="e.g. Intervals 6×">
+			</label>
+			<label class="field">
+				<span class="field__label">Description</span>
+				<input class="input" name="description" [(ngModel)]="model().description" (ngModelChange)="changed()" maxlength="500">
+			</label>
+			<label class="toggle">
+				<input type="checkbox" name="controlIncline" [(ngModel)]="model().controlIncline" (ngModelChange)="changed()">
+				<span>Plan controls incline <span class="muted">(off: Zwift or the console keeps control)</span></span>
+			</label>
+		</section>
+
+		<section class="card editor__totals" aria-live="polite">
+			<div class="stat"><span class="stat__label">Total time</span><span class="stat__value num">{{ prefs.duration(totals().seconds) }}</span></div>
+			<div class="stat"><span class="stat__label">Distance</span><span class="stat__value num">{{ prefs.distance(totals().metres) }}<span class="stat__unit">{{ prefs.distanceLabel() }}</span></span></div>
+			<div class="stat"><span class="stat__label">Steps</span><span class="stat__value num">{{ expandedCount() }}</span></div>
+			<span class="muted">Estimates use each step's target speed.</span>
+		</section>
+
+		@if (preview().length) {
+			<div class="card">
+				<div class="preview" role="img" [attr.aria-label]="'Plan profile, ' + expandedCount() + ' steps'">
+					@for (bar of preview(); track $index) {
+						<div class="preview__bar" [style.height.%]="bar.height" [style.flex-grow]="bar.grow" [title]="bar.label"></div>
+					}
+				</div>
+			</div>
+		}
+
+		<ol class="items">
+			@for (item of model().items; track item.id; let i = $index) {
+				<li class="card item" [class.item--block]="isBlock(item)" [class.item--dragging]="dragIndex() === i" [class.item--drop]="dropIndex() === i && dragIndex() !== i"
+					draggable="true" (dragstart)="onDragStart(i, $event)" (dragover)="onDragOver(i, $event)" (drop)="onDrop(i, $event)" (dragend)="onDragEnd()">
+					<div class="item__head">
+						<span class="item__kind">{{ isBlock(item) ? 'Repeat block' : 'Step ' + (i + 1) }}</span>
+						<span class="spacer"></span>
+						<button class="btn btn--ghost" type="button" (click)="move(model().items, i, -1)" (keydown)="keyMove($event, model().items, i)" [disabled]="i === 0" aria-label="Move up (Alt+Up)">↑</button>
+						<button class="btn btn--ghost" type="button" (click)="move(model().items, i, 1)" (keydown)="keyMove($event, model().items, i)" [disabled]="i === model().items.length - 1" aria-label="Move down (Alt+Down)">↓</button>
+						<button class="btn btn--ghost" type="button" (click)="remove(model().items, i)" aria-label="Remove">✕</button>
+					</div>
+					@if (isBlock(item)) {
+						<div class="step-grid">
+							<label class="field">
+								<span class="field__label">Block label</span>
+								<input class="input" [(ngModel)]="item.label" [ngModelOptions]="{ standalone: true }" (ngModelChange)="changed()" maxlength="40">
+							</label>
+							<label class="field">
+								<span class="field__label">Repeat (1–99)</span>
+								<input class="input num" type="number" min="1" max="99" [(ngModel)]="item.repeat" [ngModelOptions]="{ standalone: true }" (ngModelChange)="changed()" [attr.aria-invalid]="errorAt('items[' + i + ']', 'repeat') ? 'true' : null">
+								@if (errorAt('items[' + i + ']', 'repeat'); as e) { <span class="field__error">{{ e }}</span> }
+							</label>
+						</div>
+						@if (errorAt('items[' + i + ']', 'steps'); as e) { <p class="field__error">{{ e }}</p> }
+						<ol class="block-steps">
+							@for (step of item.steps; track step.id; let j = $index) {
+								<li class="block-step">
+									<div class="item__head">
+										<span class="item__kind">Step {{ j + 1 }} of {{ item.steps.length }}</span>
+										<span class="spacer"></span>
+										<button class="btn btn--ghost" type="button" (click)="move(item.steps, j, -1)" (keydown)="keyMove($event, item.steps, j)" [disabled]="j === 0" aria-label="Move step up">↑</button>
+										<button class="btn btn--ghost" type="button" (click)="move(item.steps, j, 1)" (keydown)="keyMove($event, item.steps, j)" [disabled]="j === item.steps.length - 1" aria-label="Move step down">↓</button>
+										<button class="btn btn--ghost" type="button" (click)="remove(item.steps, j)" [disabled]="item.steps.length === 1" aria-label="Remove step">✕</button>
+									</div>
+									<ng-container *ngTemplateOutlet="stepFields; context: { step: step, path: 'items[' + i + '].steps[' + j + ']' }" />
+								</li>
+							}
+						</ol>
+						<div class="row"><button class="btn" type="button" (click)="addBlockStep(item)" [disabled]="item.steps.length >= 20">+ Step in block</button></div>
+					}
+					@else {
+						<ng-container *ngTemplateOutlet="stepFields; context: { step: asStep(item), path: 'items[' + i + ']' }" />
+					}
+				</li>
+			}
+		</ol>
+
+		<div class="row">
+			<button class="btn" type="button" (click)="addStep()" [disabled]="model().items.length >= 200">+ Step</button>
+			<button class="btn" type="button" (click)="addBlock()" [disabled]="model().items.length >= 200">+ Repeat block</button>
+		</div>
+
+		<div class="row editor__footer">
+			<a class="btn btn--ghost" routerLink="/plans">← Back to plans</a>
+			<span class="spacer"></span>
+			@if (model().id) {
+				<button class="btn btn--danger" type="button" (click)="deletePlan()" [disabled]="saving() || runningThis()">Delete plan</button>
+			}
+			@else {
+				<a class="btn btn--ghost" routerLink="/plans">Cancel</a>
+			}
+		</div>
+	</div>
+}

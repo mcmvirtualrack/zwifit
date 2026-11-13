@@ -1,0 +1,52 @@
+{
+	"schemaVersion": 1,
+	"name": "Intervals 4 x 400 m",
+	"description": "Warm-up, four fast 400 m repeats with walking recovery, cool-down.",
+	"authoredUnits": "imperial",
+	"items": [
+		{
+			"kind": "step",
+			"id": "warmup",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": { "form": "speed", "unit": "mph", "value": 4 },
+			"targetIncline": 1,
+			"end": { "type": "time", "seconds": 300 }
+		},
+		{
+			"kind": "block",
+			"id": "repeats",
+			"label": "Repeats",
+			"repeat": 4,
+			"steps": [
+				{
+					"kind": "step",
+					"id": "fast",
+					"label": "Fast",
+					"targetKph": 12,
+					"entered": { "form": "pace", "unit": "min/km", "value": "5:00" },
+					"targetIncline": 0,
+					"end": { "type": "distance", "metres": 400 }
+				},
+				{
+					"kind": "step",
+					"id": "walk",
+					"label": "Walk",
+					"targetKph": 5,
+					"entered": { "form": "speed", "unit": "kph", "value": 5 },
+					"targetIncline": 2.5,
+					"end": { "type": "time", "seconds": 90 }
+				}
+			]
+		},
+		{
+			"kind": "step",
+			"id": "cooldown",
+			"label": "Cool-down",
+			"targetKph": 4.828,
+			"entered": { "form": "pace", "unit": "min/mi", "value": "20:00" },
+			"targetIncline": 0,
+			"end": { "type": "distance", "metres": 800 }
+		}
+	]
+}

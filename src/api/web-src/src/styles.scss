@@ -1,48 +1,7 @@
-html, body {
-	height: 100%;
-	margin: 0;
-	padding: 0;
-}
-
-body {
-	font-family: 'Source Sans Pro', sans-serif;
-	text-shadow: 1px 1px 2px #000000;
-	background: rgb(125, 126, 125); /* Old browsers */
-	background: -moz-linear-gradient(-45deg, rgba(125, 126, 125, 1) 0%, rgba(14, 14, 14, 1) 100%); /* FF3.6-15 */
-	background: -webkit-linear-gradient(-45deg, rgba(125, 126, 125, 1) 0%, rgba(14, 14, 14, 1) 100%); /* Chrome10-25,Safari5.1-6 */
-	background: linear-gradient(135deg, rgba(125, 126, 125, 1) 0%, rgba(14, 14, 14, 1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-	background-attachment: fixed;
-}
-
-form {
-	padding: 6px 12px;
-}
-
-.noselect {
-	-webkit-touch-callout: none;
-	-webkit-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none;
-}
-
-pre {
-	padding: 6px 12px;
-}
-
-pre,
-.text-muted {
-	color: white !important;
-	opacity: 0.5;
-	text-shadow: none;
-}
-
-.blinking {
-	animation: blinker 1s linear infinite;
-}
-
-@keyframes blinker {
-	50% {
-		opacity: 0.5;
-	}
-}
+// All styles are global (no component styles) so the page works under the server's
+// Content-Security-Policy `style-src 'self'`, which forbids inline <style> tags.
+@use "styles/tokens";
+@use "styles/base";
+@use "styles/shell";
+@use "styles/components";
+@use "styles/screens";

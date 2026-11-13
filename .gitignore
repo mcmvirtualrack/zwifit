@@ -1,6 +1,15 @@
 .idea
+.vscode
 .DS_Store
+Thumbs.db
 node_modules
 *.log
+*.tmp
+*.swp
+.env*
 routes.conf
 settings.conf
+coverage/
+playwright-report/
+test-results/
+.zwifit-data/

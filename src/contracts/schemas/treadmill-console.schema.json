@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zwifit.local/schemas/treadmill-console.json",
+  "description": "treadmill:console: raw messages after this sequence number (0 = all kept).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "after": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

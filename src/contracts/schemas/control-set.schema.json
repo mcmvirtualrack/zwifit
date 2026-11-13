@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zwifit.local/schemas/control-set.json",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 1,
+  "properties": {
+    "kph": { "type": "number", "minimum": 0, "maximum": 30 },
+    "incline": { "type": "number", "minimum": -10, "maximum": 40 }
+  }
+}

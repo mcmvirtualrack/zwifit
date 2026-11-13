@@ -1,0 +1,401 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zwifit.local/schemas/settings.json",
+  "title": "Zwifit settings.json v2",
+  "description": "Cross-field rules (min < max, cooldownKph within limits, TLS cert and key together) are checked in src/storage/settingsRepo.js.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "metric",
+    "treadmill",
+    "speedOffset",
+    "speedMultiplier",
+    "limits",
+    "cooldownKph",
+    "broadcast",
+    "server"
+  ],
+  "properties": {
+    "version": {
+      "const": 2
+    },
+    "metric": {
+      "type": "boolean"
+    },
+    "treadmill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transport"
+      ],
+      "properties": {
+        "transport": {
+          "enum": [
+            "wifi",
+            "ble",
+            "simulated"
+          ]
+        },
+        "ip": {
+          "$ref": "#/$defs/host"
+        },
+        "lastIP": {
+          "$ref": "#/$defs/host"
+        },
+        "bleCode": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9A-Fa-f]{4}$"
+            }
+          ]
+        },
+        "bleDeviceName": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "maxLength": 64
+            }
+          ]
+        },
+        "bleActivation": true,
+        "bleDetails": true,
+        "bleServices": true,
+        "bleAdvertisingData": true,
+        "bleScanData": true
+      }
+    },
+    "speedOffset": {
+      "type": "number",
+      "minimum": -2,
+      "maximum": 2
+    },
+    "speedMultiplier": {
+      "type": "number",
+      "minimum": 0.5,
+      "maximum": 1.5
+    },
+    "fallbackKph": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30
+        }
+      ]
+    },
+    "limits": {
+      "$ref": "#/$defs/limits"
+    },
+    "cooldownKph": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 30
+    },
+    "broadcast": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ftms",
+        "rsc"
+      ],
+      "properties": {
+        "ftms": {
+          "type": "boolean"
+        },
+        "rsc": {
+          "type": "boolean"
+        },
+        "hr": {
+          "type": "boolean",
+          "description": "Broadcast the treadmill's heart rate as a Bluetooth Heart Rate sensor. Missing means on."
+        },
+        "power": {
+          "type": "boolean",
+          "description": "Broadcast sensor running power as a Bluetooth Cycling Power sensor (Zwift: pair it as the power source). Missing means off."
+        },
+        "ftmsPower": {
+          "type": "boolean",
+          "description": "Add sensor running power to the Fitness Machine treadmill data. Missing means off."
+        }
+      }
+    },
+    "sensors": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Extra sensors. Missing means ANT+ on and every source auto.",
+      "properties": {
+        "ant": {
+          "type": "boolean"
+        },
+        "hrSource": {
+          "enum": [
+            "auto",
+            "ant",
+            "ble",
+            "treadmill",
+            "off",
+            "sensor"
+          ],
+          "description": "auto: ANT+ first, then Bluetooth, then the treadmill. sensor: ANT+ or Bluetooth (older setting)."
+        },
+        "cadenceSource": {
+          "enum": [
+            "auto",
+            "ant",
+            "ble",
+            "treadmill",
+            "off",
+            "sensor"
+          ]
+        },
+        "powerSource": {
+          "enum": [
+            "auto",
+            "ant",
+            "ble",
+            "off"
+          ]
+        },
+        "antDevices": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "The ANT+ device number picked for each kind (sensors:connect). Missing means the first one in range.",
+          "properties": {
+            "hr": {
+              "$ref": "#/$defs/antDevice"
+            },
+            "cadence": {
+              "$ref": "#/$defs/antDevice"
+            },
+            "power": {
+              "$ref": "#/$defs/antDevice"
+            }
+          }
+        },
+        "bluetooth": {
+          "type": "array",
+          "maxItems": 8,
+          "description": "Bluetooth sensors picked with sensors:connect; reconnected whenever in range.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "name",
+              "kinds"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/sensorId"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "string",
+                    "maxLength": 64
+                  }
+                ]
+              },
+              "kinds": {
+                "type": "array",
+                "uniqueItems": true,
+                "maxItems": 3,
+                "items": {
+                  "enum": [
+                    "hr",
+                    "cadence",
+                    "power"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "powerSmoothing": {
+          "enum": [
+            1,
+            3,
+            10
+          ],
+          "description": "Seconds power is averaged over. Missing means 3."
+        },
+        "thresholdPower": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer",
+              "minimum": 50,
+              "maximum": 1000
+            }
+          ],
+          "description": "Running power threshold (e.g. Stryd critical power), watts."
+        },
+        "weightKg": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "number",
+              "minimum": 30,
+              "maximum": 250
+            }
+          ],
+          "description": "Body weight for W/kg."
+        }
+      }
+    },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "port",
+        "host"
+      ],
+      "properties": {
+        "port": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 65535
+        },
+        "host": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9.:-]{1,253}$"
+        },
+        "tls": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "certPath": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1024
+                    }
+                  ]
+                },
+                "keyPath": {
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1024
+                    }
+                  ]
+                },
+                "port": {
+                  "description": "HTTPS on this extra port, the main port staying HTTP. Missing or null: the main port is HTTPS.",
+                  "anyOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "integer",
+                      "minimum": 1024,
+                      "maximum": 65535
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "migrations": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "One-time data migrations already done.",
+      "properties": {
+        "routesV1": {
+          "type": "boolean"
+        },
+        "demoPlanV1": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "antDevice": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1048575
+    },
+    "sensorId": {
+      "type": "string",
+      "pattern": "^[0-9A-Za-z:_-]{1,64}$"
+    },
+    "host": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,252})(?::[0-9]{1,5})?$"
+        }
+      ]
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minKph",
+        "maxKph",
+        "minIncline",
+        "maxIncline"
+      ],
+      "properties": {
+        "minKph": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "maxKph": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "minIncline": {
+          "type": "number",
+          "minimum": -10,
+          "maximum": 40
+        },
+        "maxIncline": {
+          "type": "number",
+          "minimum": -10,
+          "maximum": 40
+        }
+      }
+    }
+  }
+}

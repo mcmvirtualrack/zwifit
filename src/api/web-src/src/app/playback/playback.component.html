@@ -1,0 +1,193 @@
+@if (!p() || p()?.state === 'idle') {
+	<div class="page-head">
+		<h1>Workout</h1>
+	</div>
+	<div class="card empty">
+		<p>No plan is running.</p>
+		<a class="btn btn--primary" routerLink="/plans">Choose a plan</a>
+	</div>
+}
+@else {
+	@if (p(); as pb) {
+		<div class="run-head">
+			<div class="run-head__title">
+				<span class="card__title run-head__eyebrow">
+					@switch (pb.state) {
+						@case ('paused') { Paused }
+						@case ('waiting') { Waiting for the belt }
+						@case ('resuming') { Waiting for the belt }
+						@case ('completed') { Finished }
+						@case ('ended') { Ended }
+						@default { Running plan }
+					}
+				</span>
+				<h1>{{ pb.planName || 'Workout' }}</h1>
+			</div>
+			<div class="run-head__clock">
+				<span class="run-head__time num">{{ prefs.duration(pb.planElapsed.seconds) }}@if (totalSeconds(); as total) { <span class="run-head__total">/ {{ prefs.duration(total) }}</span>}</span>
+				<span class="run-head__sub">@if (pb.current) {step {{ pb.current.flatIndex + 1 }} of {{ pb.stepCount }} · }{{ prefs.distance(pb.planElapsed.metres) }} {{ prefs.distanceLabel() }}</span>
+			</div>
+			@if (!finished()) {
+				<div class="run-head__actions" role="group" aria-label="Workout">
+					@if (pb.state === 'paused') {
+						<button class="btn btn--primary" type="button" (click)="command('playback:resume')" [disabled]="busy()">
+							<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z" /></svg>Resume
+						</button>
+					}
+					@else {
+						<button class="btn" type="button" (click)="command('playback:pause')" [disabled]="busy() || pb.state !== 'running'">
+							<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>Pause
+						</button>
+					}
+					<button class="btn" type="button" (click)="command('playback:skip')" [disabled]="busy() || !active() || pb.state === 'waiting'">
+						<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l9 7-9 7zM16 5h3v14h-3z" /></svg>Skip step
+					</button>
+					<button class="btn btn--stop" type="button" (click)="command('playback:stop', 'Stop this plan? The belt keeps moving; use Stop on the dashboard or the treadmill to stop it.')" [disabled]="busy() || !active()">
+						<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>Stop
+					</button>
+				</div>
+			}
+		</div>
+
+		<div aria-live="polite" class="stack">
+			@if (pb.message) { <div class="banner banner--accent" role="status">{{ pb.message }}</div> }
+			@if (finished() && pb.endReason) {
+				<div class="banner" [class.banner--ok]="pb.endReason === 'completed'" [class.banner--warn]="pb.endReason !== 'completed'" role="status">
+					<strong>{{ reasons[pb.endReason] }}</strong>
+					@if (pb.endReason === 'completed') { <span>Cool-down speed set. The belt keeps moving until you stop it.</span> }
+				</div>
+			}
+		</div>
+
+		@if (finished()) {
+			<div class="run-after" role="group" aria-label="After this workout">
+				<a class="btn btn--primary btn--lg" routerLink="/plans">← Back to plans</a>
+				@if (pb.planId) {
+					<a class="btn btn--lg" [routerLink]="['/plans', pb.planId]">Edit this plan</a>
+					<button class="btn btn--lg" type="button" (click)="runAgain(pb.planId)" [disabled]="busy()">Run again</button>
+				}
+				<a class="btn btn--lg" routerLink="/history">See history</a>
+			</div>
+		}
+
+		@if (bars().length) {
+			<section class="card profile" aria-label="Plan profile">
+				<div class="profile__chart">
+					<svg viewBox="0 0 1000 100" preserveAspectRatio="none" role="img" [attr.aria-label]="'Plan speed profile, ' + round(planProgress()) + '% done'">
+						<g class="live__grid">
+							@for (y of [14.3, 42.9, 71.4]; track y) { <line x1="0" x2="1000" [attr.y1]="y" [attr.y2]="y" vector-effect="non-scaling-stroke" /> }
+						</g>
+						@for (b of bars(); track $index) {
+							<rect [class]="'profile__bar profile__bar--' + b.state" [attr.x]="b.x" [attr.y]="b.y" [attr.width]="b.w" [attr.height]="100 - b.y" />
+						}
+						<line class="profile__now" [attr.x1]="planProgress() * 10" [attr.x2]="planProgress() * 10" y1="0" y2="100" vector-effect="non-scaling-stroke" />
+					</svg>
+				</div>
+				<div class="live__axis profile__axis num" aria-hidden="true">
+					@for (label of profileAxis(); track $index) { <span>{{ label }}</span> }
+				</div>
+			</section>
+		}
+
+		<div class="run-row">
+			@if (pb.current; as step) {
+				<section class="card now-card" aria-labelledby="now-title">
+					<app-hr-trace />
+					<div class="now-card__main">
+						<span class="now-card__eyebrow" id="now-title">Now · {{ stepTitle(step) }}</span>
+						<div class="now-card__speed">
+							<span class="now-card__value num">{{ prefs.speed(treadmill()?.kph) }}</span>
+							<span class="now-card__unit">{{ prefs.speedLabel() }}</span>
+						</div>
+						<div class="now-card__chips">
+							@if (onTarget()) {
+								<span class="tag tag--ok"><svg class="tag__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>On target {{ prefs.speed(targetKph()) }} {{ prefs.speedLabel() }}</span>
+							}
+							@else {
+								<span class="tag tag--warn">Target {{ prefs.speed(targetKph()) }} {{ prefs.speedLabel() }}</span>
+							}
+							@if (pb.controlIncline) { <span class="tag num">{{ (pb.override?.incline ?? step.targetIncline).toFixed(1) }}% incline</span> }
+							<span class="tag num">{{ prefs.pace(treadmill()?.kph) }} {{ prefs.paceLabel() }}</span>
+						</div>
+						@if (pb.override) {
+							<span class="pill pill--warn"><span class="pill__dot"></span>Manual change until the next step</span>
+						}
+					</div>
+					<div class="ring" role="img" [attr.aria-label]="remainingText() + ' ' + (remainingUnit() || '') + ' left in this step'">
+						<svg viewBox="0 0 120 120" aria-hidden="true">
+							<circle class="ring__track" cx="60" cy="60" r="54" />
+							<circle class="ring__fill" cx="60" cy="60" r="54" [attr.stroke-dashoffset]="ringOffset()" transform="rotate(-90 60 60)" />
+						</svg>
+						<div class="ring__text">
+							<span class="ring__value num">{{ remainingText() }}</span>
+							<span class="ring__label">{{ remainingUnit() ? remainingUnit() + ' left' : 'left in step' }}</span>
+						</div>
+					</div>
+				</section>
+			}
+
+			@if (upNext().length) {
+				<section class="card up-next" aria-labelledby="next-title">
+					<h2 class="card__title" id="next-title">Up next</h2>
+					@for (u of upNext(); track $index) {
+						<div class="up-next__item">
+							<span class="up-next__bar" [class]="'up-next__bar up-next__bar--' + u.shade"></span>
+							<span class="up-next__text"><strong>{{ u.label }}</strong><span class="num">{{ u.target }}</span></span>
+							<span class="up-next__dur num">{{ u.duration }}</span>
+						</div>
+					}
+				</section>
+			}
+		</div>
+
+		@if (sensorsSeen().any) {
+			<section class="card live-card" aria-labelledby="workout-live-title">
+				<div class="live-card__head">
+					<h2 class="card__title live-card__title" id="workout-live-title">Live · {{ window() === 'workout' ? 'this workout' : window() === 'short' ? 'last 2 min' : 'last 10 min' }}</h2>
+					<div class="segmented segmented--sm" role="group" aria-label="Time window">
+						<button type="button" [attr.aria-pressed]="window() === 'short'" (click)="window.set('short')">2 min</button>
+						<button type="button" [attr.aria-pressed]="window() === 'long'" (click)="window.set('long')">10 min</button>
+						<button type="button" [attr.aria-pressed]="window() === 'workout'" (click)="window.set('workout')">Workout</button>
+					</div>
+				</div>
+				<app-live-chart [showSpeed]="false" [windowMs]="window() === 'short' ? 120000 : 600000"
+					[startedAt]="window() === 'workout' ? workoutStart() : null"
+					[show]="{ hr: sensorsSeen().hr, cadence: sensorsSeen().cadence, power: sensorsSeen().power }" />
+			</section>
+		}
+
+		<div class="tiles">
+			<section class="tile" aria-label="Distance">
+				<span class="eyebrow">Distance</span>
+				<span class="tile__reading"><span class="tile__value num">{{ prefs.distance(pb.planElapsed.metres) }}</span><span class="tile__unit">{{ prefs.distanceLabel() }}</span></span>
+				<span class="tile__sub">@if (plannedMetres(); as m) {of {{ prefs.distance(m, 1) }} {{ prefs.distanceLabel() }} planned}@if (pb.estimated) { · estimated}</span>
+			</section>
+			<section class="tile tile--hr" aria-label="Heart rate">
+				<span class="eyebrow">Heart rate</span>
+				<span class="tile__reading"><span class="tile__value num">{{ treadmill()?.hr ? round(treadmill()!.hr!) : '–' }}</span>@if (treadmill()?.hr) {<span class="tile__unit">bpm</span>}</span>
+				<span class="tile__sub">@if (zone(); as z) {Zone {{ z }}}@if (stepAvg().hr; as a) { · step avg {{ a }}}@if (!treadmill()?.hr) {not available}</span>
+			</section>
+			@if (treadmill()?.cadence || stepAvg().cadence) {
+				<section class="tile tile--cadence" aria-label="Cadence">
+					<span class="eyebrow">Cadence</span>
+					<span class="tile__reading"><span class="tile__value num">{{ treadmill()?.cadence || '–' }}</span><span class="tile__unit">spm</span></span>
+					<span class="tile__sub">{{ sourceLabel(treadmill()?.cadenceSource) }}@if (stepAvg().cadence; as a) { · step avg {{ a }}}</span>
+				</section>
+			}
+			@else {
+				<section class="tile" aria-label="Incline">
+					<span class="eyebrow">Incline</span>
+					<span class="tile__reading"><span class="tile__value num">{{ (treadmill()?.incline ?? 0).toFixed(1) }}</span><span class="tile__unit">%</span></span>
+					<span class="tile__sub">{{ prefs.pace(treadmill()?.kph) }} {{ prefs.paceLabel() }}</span>
+				</section>
+			}
+			@if (treadmill()?.power || stepAvg().power) {
+				<section class="tile tile--power" aria-label="Power">
+					<span class="eyebrow">Power</span>
+					<span class="tile__reading"><span class="tile__value num">{{ treadmill()?.power || '–' }}</span><span class="tile__unit">W</span></span>
+					<span class="tile__sub">@if (stepAvg().power; as a) {step avg {{ a }}}@if (prefs.thresholdPower() && stepAvg().power; as a) { · {{ round(stepAvg().power! / prefs.thresholdPower()! * 100) }}% threshold}</span>
+				</section>
+			}
+		</div>
+	}
+}

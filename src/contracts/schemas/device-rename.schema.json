@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zwifit.local/schemas/device-rename.json",
+  "description": "PATCH /api/devices/:id: rename, change the address, and/or trust the device's address (no cookie needed from it).",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 1,
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "trusted": {
+      "type": "boolean"
+    },
+    "ip": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 45
+    }
+  }
+}

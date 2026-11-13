@@ -1,0 +1,4 @@
+# Switches a Bluetooth adapter on when it appears (e.g. after usbipd attach). Zwifit drives the
+# adapter directly with the BlueZ service disabled, so nothing else powers it up.
+# Install: sudo cp scripts/wsl/99-zwifit-hci-up.rules /etc/udev/rules.d/ && sudo udevadm control --reload
+ACTION=="add", SUBSYSTEM=="bluetooth", KERNEL=="hci[0-9]*", RUN+="/bin/sh -c 'sleep 2; /usr/bin/hciconfig %k up'"

@@ -1,0 +1,126 @@
+// Design tokens. Every colour, size and radius in the app comes from these custom properties.
+// The dark palette is the design's (Inter for text, JetBrains Mono for numbers) and is the
+// default; light applies from Settings → Display or [data-theme="light"].
+
+:root {
+	color-scheme: light;
+	--bg: #eef1f5;
+	--bg-elevated: #e4e9ef;
+	--surface: #ffffff;
+	--surface-2: #f3f5f8;
+	--surface-3: #e2e7ee;
+	--track: #e2e7ee;
+	--border: #d6dde6;
+	--border-strong: #c3ccd7;
+	--divider: #e2e7ee;
+	--text: #10151c;
+	--text-strong: #05080c;
+	--text-soft: #2f3a47;
+	--text-muted: #4d5866;
+	--text-faint: #8a96a3;
+	--accent: #00785e;
+	--accent-strong: #005c48;
+	--accent-contrast: #ffffff;
+	--accent-soft: #d6f2e9;
+	--accent-dim: #8fd3bf;
+	--accent-faint: #cbeee3;
+	--danger: #b3261e;
+	--danger-text: #b3261e;
+	--danger-soft: #fbe3e1;
+	--warn: #8a5300;
+	--warn-soft: #fdefd6;
+	--ok: #1b6e2a;
+	--ok-soft: #dcf2df;
+	--hr: #c0264b;
+	--hr-text: #b0213f;
+	--hr-contrast: #ffffff;
+	--cadence: #9a5a00;
+	--cadence-text: #8a5300;
+	--cadence-contrast: #ffffff;
+	--power: #6a3fc8;
+	--power-text: #5b33b0;
+	--power-contrast: #ffffff;
+	--incline: #2f63c9;
+	--focus: #1f5fd1;
+	--shadow: 0 1px 2px rgb(16 21 28 / 6%), 0 4px 16px rgb(16 21 28 / 6%);
+	--glass: rgb(255 255 255 / 80%);
+
+	--font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	--font-numeric: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+	--text-xs: 0.75rem;
+	--text-sm: 0.8125rem;
+	--text-md: 0.9375rem;
+	--text-lg: 1.25rem;
+	--text-xl: 1.75rem;
+	--text-2xl: 2rem;
+	--text-hero: clamp(3.5rem, 12vw, 4.75rem);
+	--text-stat: 2rem;
+
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-5: 1.25rem;
+	--space-6: 2rem;
+	--space-7: 3rem;
+
+	--radius-sm: 10px;
+	--radius: 16px;
+	--radius-lg: 20px;
+	--touch: 48px;
+	--page-width: 1200px;
+}
+
+@mixin dark {
+	color-scheme: dark;
+	--bg: #080b10;
+	--bg-elevated: #0a0f15;
+	--surface: #0e141b;
+	--surface-2: #121a23;
+	--surface-3: #1a232e;
+	--track: #16202a;
+	--border: #1c2530;
+	--border-strong: #263240;
+	--divider: #18212b;
+	--text: #e8edf2;
+	--text-strong: #f3f6f9;
+	--text-soft: #b5c0cb;
+	--text-muted: #8d99a6;
+	--text-faint: #4f5b67;
+	--accent: #3ee6b5;
+	--accent-strong: #8af2d3;
+	--accent-contrast: #062019;
+	--accent-soft: rgb(62 230 181 / 14%);
+	--accent-dim: #2a6e5c;
+	--accent-faint: #1d3a34;
+	--danger: #ff8a7a;
+	--danger-text: #ff9d90;
+	--danger-soft: #3d1b1a;
+	--warn: #f5b14c;
+	--warn-soft: #3a2a10;
+	--ok: #3ee6b5;
+	--ok-soft: rgb(62 230 181 / 12%);
+	--hr: #ff6b8b;
+	--hr-text: #ff8aa3;
+	--hr-contrast: #2a0710;
+	--cadence: #f5b14c;
+	--cadence-text: #f7c374;
+	--cadence-contrast: #2a1a02;
+	--power: #b99bff;
+	--power-text: #cbb5ff;
+	--power-contrast: #1a0f33;
+	--incline: #8fb4ff;
+	--focus: #8ab4ff;
+	--shadow: none;
+	--glass: rgb(10 15 21 / 72%);
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		@include dark;
+	}
+}
+
+:root[data-theme="dark"] {
+	@include dark;
+}

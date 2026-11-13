@@ -1,0 +1,162 @@
+// App shell: brand on the left, the page links as a segmented control on the top right.
+
+.shell {
+	min-height: 100vh;
+	max-width: var(--page-width);
+	margin: 0 auto;
+	padding: 24px 20px 48px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.topbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+}
+
+.brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	min-height: var(--touch);
+	color: var(--text);
+	text-decoration: none;
+}
+
+.brand__mark {
+	width: 28px;
+	height: 28px;
+	fill: none;
+	stroke: var(--accent);
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.brand__name {
+	font-weight: 800;
+	font-size: 20px;
+	letter-spacing: -0.02em;
+}
+
+.topbar__context {
+	font-size: 13px;
+	color: var(--text-muted);
+}
+
+.topnav {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px;
+	padding: 3px;
+	border-radius: 12px;
+	background: var(--bg-elevated);
+	border: 1px solid var(--border);
+}
+
+.topnav__link {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 40px;
+	padding: 0 14px;
+	border-radius: 9px;
+	text-decoration: none;
+	font-weight: 600;
+	font-size: 13px;
+	color: var(--text-muted);
+	transition: background 0.15s, color 0.15s;
+
+	&:hover {
+		color: var(--text);
+	}
+}
+
+.topnav__link--active,
+.topnav__link--active:hover {
+	background: var(--surface-3);
+	color: var(--text);
+}
+
+.topnav__badge {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--accent);
+}
+
+.shell__main {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+// Each page (the routed component's element) stacks its sections 16 px apart.
+.shell__main > :not(router-outlet) {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	min-width: 0;
+}
+
+// Phones: the links take the full width under the brand, evenly spaced.
+@media (max-width: 640px) {
+	.shell {
+		padding: 16px 16px 40px;
+	}
+
+	.topnav {
+		order: 10;
+		width: 100%;
+		flex-wrap: nowrap;
+	}
+
+	.topnav__link {
+		flex: 1 1 0;
+		min-height: var(--touch);
+		padding: 0 4px;
+		font-size: 12px;
+	}
+
+	.topbar .spacer {
+		display: none;
+	}
+}
+
+// Top bar: restart Zwifit (left of the page links).
+.topbar__restart {
+	width: var(--touch);
+	padding: 0;
+	border-radius: 12px;
+}
+
+.topbar__restart-icon {
+	flex: none;
+	width: 24px;
+	height: 24px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.topbar__restart-icon--spin {
+	animation: topbar-spin 1s linear infinite;
+}
+
+@keyframes topbar-spin {
+	to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.topbar__restart-icon--spin {
+		animation: none;
+	}
+}

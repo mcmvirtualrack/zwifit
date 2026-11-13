@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zwifit.local/schemas/settings-write.json",
+  "title": "Settings fields a paired device may change",
+  "description": "BLE pairing internals and TLS file paths are not writable from the network; edit settings.json on the host for those. Server host/port apply after a restart.",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 1,
+  "properties": {
+    "metric": {
+      "type": "boolean"
+    },
+    "treadmill": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "transport": {
+          "enum": [
+            "wifi",
+            "ble",
+            "simulated"
+          ]
+        },
+        "ip": {
+          "$ref": "settings.json#/$defs/host"
+        },
+        "bleCode": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9A-Fa-f]{4}$"
+            }
+          ]
+        }
+      }
+    },
+    "speedOffset": {
+      "type": "number",
+      "minimum": -2,
+      "maximum": 2
+    },
+    "speedMultiplier": {
+      "type": "number",
+      "minimum": 0.5,
+      "maximum": 1.5
+    },
+    "fallbackKph": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30
+        }
+      ]
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "minKph": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "maxKph": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30
+        },
+        "minIncline": {
+          "type": "number",
+          "minimum": -10,
+          "maximum": 40
+        },
+        "maxIncline": {
+          "type": "number",
+          "minimum": -10,
+          "maximum": 40
+        }
+      }
+    },
+    "cooldownKph": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 30
+    },
+    "broadcast": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "ftms": {
+          "type": "boolean"
+        },
+        "rsc": {
+          "type": "boolean"
+        },
+        "hr": {
+          "type": "boolean"
+        },
+        "power": {
+          "type": "boolean",
+          "description": "Broadcast sensor running power as a Bluetooth Cycling Power sensor (Zwift: pair it as the power source). Missing means off."
+        },
+        "ftmsPower": {
+          "type": "boolean",
+          "description": "Add sensor running power to the Fitness Machine treadmill data. Missing means off."
+        }
+      }
+    },
+    "sensors": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "ant": {
+          "type": "boolean"
+        },
+        "hrSource": {
+          "enum": [
+            "auto",
+            "ant",
+            "ble",
+            "treadmill",
+            "off",
+            "sensor"
+          ],
+          "description": "auto: ANT+ first, then Bluetooth, then the treadmill. sensor: ANT+ or Bluetooth (older setting)."
+        },
+        "cadenceSource": {
+          "enum": [
+            "auto",
+            "ant",
+            "ble",
+            "treadmill",
+            "off",
+            "sensor"
+          ]
+        },
+        "powerSource": {
+          "enum": [
+            "auto",
+            "ant",
+            "ble",
+            "off"
+          ]
+        },
+        "powerSmoothing": {
+          "enum": [
+            1,
+            3,
+            10
+          ],
+          "description": "Seconds power is averaged over. Missing means 3."
+        },
+        "thresholdPower": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer",
+              "minimum": 50,
+              "maximum": 1000
+            }
+          ],
+          "description": "Running power threshold (e.g. Stryd critical power), watts."
+        },
+        "weightKg": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "number",
+              "minimum": 30,
+              "maximum": 250
+            }
+          ],
+          "description": "Body weight for W/kg."
+        }
+      }
+    },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "port": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 65535
+        },
+        "host": {
+          "enum": [
+            "0.0.0.0",
+            "127.0.0.1",
+            "::",
+            "::1"
+          ]
+        }
+      }
+    }
+  }
+}

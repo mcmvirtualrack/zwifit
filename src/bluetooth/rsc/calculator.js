@@ -1,7 +1,6 @@
 let utils = require('../../lib/utils');
 
 let secondsPerHour = 3600;
-let secondsPerMinute = 60;
 
 exports.calculateBuffer = calculateBuffer;
 
@@ -12,11 +11,8 @@ function calculateBuffer(args) {
 		cadence = args.cadence;
 
 	let metersPerSecond = kph ? kph * 1000 / secondsPerHour : 0,
-		metersPerMinute = metersPerSecond * secondsPerMinute,
 		metersPerSecondRounded = Math.round(metersPerSecond * 256),
-		stepsPerMinute = Math.round(cadence),
-		metersPerStep = (metersPerMinute && stepsPerMinute) ? metersPerMinute / stepsPerMinute : 0,
-		metersPerStepRounded = Math.round(metersPerStep * 100),
+		stepsPerMinute = Math.round(cadence || 0),
 		flags = {
 			InstantaneousStrideLengthPresent: false,
 			TotalDistancePresent: false,
@@ -33,6 +29,5 @@ function calculateBuffer(args) {
 		.write(8, utils.convertFlags(flags))
 		.write(16, metersPerSecondRounded)
 		.write(8, stepsPerMinute)
-		// .write(16, metersPerStepRounded)
 		.finish();
 }

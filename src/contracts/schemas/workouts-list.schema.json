@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zwifit.local/schemas/workouts-list.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [],
+  "properties": { "before": { "type": "string", "format": "date-time" }, "limit": { "type": "integer", "minimum": 1, "maximum": 100 } }
+}

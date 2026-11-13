@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zwifit.local/schemas/sensors-scan.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["transport"],
+  "properties": {
+    "transport": { "enum": ["ant", "bluetooth"] }
+  }
+}

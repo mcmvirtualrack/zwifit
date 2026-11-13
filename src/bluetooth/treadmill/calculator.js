@@ -11,7 +11,9 @@ exports.calculateBuffer = calculateBuffer;
 function calculateBuffer(args) {
 	let kph = args.kph,
 		hr = args.hr,
-		incline = args.incline;
+		incline = args.incline,
+		// Running power in watts (from a Stryd), sent with a zero force on belt; left out when unknown.
+		power = args.power;
 
 	let kilometersPerHour = kph,
 		kilometersPerHourRounded = Math.round(kilometersPerHour * 100),
@@ -31,7 +33,7 @@ function calculateBuffer(args) {
 			MetabolicEquivalentPresent: false,
 			ElapsedTimePresent: false,
 			RemainingTimePresent: false,
-			ForceOnBeltAndPowerOutputPresent: false,
+			ForceOnBeltAndPowerOutputPresent: !!power,
 			ReservedForFutureUse1: false,
 			ReservedForFutureUse2: false,
 			ReservedForFutureUse3: false
@@ -46,6 +48,11 @@ function calculateBuffer(args) {
 
 	if (hr) {
 		buffer.write(8, hr);
+	}
+
+	if (power) {
+		buffer.write(16, 0, true);
+		buffer.write(16, Math.round(power), true);
 	}
 
 	return buffer.finish();

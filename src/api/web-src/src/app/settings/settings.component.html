@@ -1,121 +1,351 @@
-<form>
-
-	<div class="form-group">
-		<label for="ipAddress">
-			IP Address
-			<span class="text-muted">
-				(Connected: <strong>{{ websocket?.current?.ifit?.connected ? 'Yes' : 'No' }}</strong>)</span>
-		</label>
-		<input [(ngModel)]="websocket.settings.ip" name="ip" aria-describedby="ipHelp" class="form-control" id="ipAddress"
-		       placeholder="Enter IFit IP Address" type="text" (ngModelChange)="saveChanges()">
-		<small class="form-text text-muted" id="ipHelp">
-			What&rsquo;s the IP address of your IFit treadmill? I recommend reserving this
-			address in your router&rsquo;s settings so you don&rsquo;t have to change this very often!
-		</small>
-	</div>
-
-	<div class="form-group">
-		<label>
-			Units
-		</label>
-		<div class="form-check">
-			<label class="form-check-label" for="miles">
-				<input [(ngModel)]="unit" class="form-check-input" id="miles" name="units" type="radio" value="miles">
-				Miles</label>
-		</div>
-		<div class="form-check">
-			<label class="form-check-label" for="kilometers">
-				<input [(ngModel)]="unit" class="form-check-input" id="kilometers" name="units" type="radio" value="kilometers">
-				Kilometers</label>
-		</div>
-		<small class="form-text text-muted" id="unitsHelp">
-			What unit of measurement would you like to use?
-		</small>
-	</div>
-
-	<div class="form-group">
-		<label for="speedOffset">
-			Speed Offset
-		</label>
-		<input [(ngModel)]="websocket.settings.speedOffset" name="speedOffset" aria-describedby="speedOffsetHelp" class="form-control"
-		       id="speedOffset"
-		       placeholder="Enter Speed Offset" type="text" (ngModelChange)="saveChanges()">
-		<small class="form-text text-muted" id="speedOffsetHelp">
-			Should we add something to the speed we receive from IFit? Negative numbers work here, too.
-			This lets you adjust your speed by a constant amount. For example, if you enter 0.5 here, then if IFit tells us you're traveling
-			4 MPH, we'll report 4.5 MPH to Zwift.
-		</small>
-	</div>
-
-	<div class="form-group">
-		<label for="speedMultiplier">
-			Speed Multiplier
-		</label>
-		<input [(ngModel)]="websocket.settings.speedMultiplier" name="speedMultiplier" aria-describedby="speedMultiplierHelp"
-		       class="form-control"
-		       id="speedMultiplier"
-		       placeholder="Enter Speed Multiplier" type="text" (ngModelChange)="saveChanges()">
-		<small class="form-text text-muted" id="speedMultiplierHelp">
-			Should we multiply the speed we receive from IFit?
-			This lets you scale your speed. For example, if you enter 1.1 here, then if IFit tells us you're traveling
-			4 MPH, we'll report 4.4 MPH to Zwift.
-		</small>
-	</div>
-
-	<div class="form-group">
-		<label for="broadcastRSC">
-			Broadcast Run-Speed-Cadence
-		</label>
-		<div class="custom-control custom-switch">
-			<input type="checkbox" class="custom-control-input"
-			       name="broadcastRSC"
-			       [checked]="websocket.settings.broadcastRSC"
-			       (change)="websocket.settings.broadcastRSC = !websocket.settings.broadcastRSC; saveChanges()"
-			       aria-describedby="broadcastRSCHelp"
-			       id="broadcastRSC">
-			<label class="custom-control-label"
-			       for="broadcastRSC">{{ websocket.settings.broadcastRSC ? 'Broadcasting!' : 'Not Broadcasting' }}</label>
-		</div>
-		<small class="form-text text-muted" id="broadcastRSCHelp">
-			Should we broadcast Bluetooth's Run-Speed-Cadence service? If you don't, then cadence won't
-			be communicated. This can be useful if you want to use a footpod instead. But some apps, like RunSocial,
-			require this service to be turned on, and don't know about the fitness-machine service.
-		</small>
-	</div>
-
-	<div class="form-group">
-		<label for="broadcastFTMS">
-			Broadcast Fitness-Machine Service
-		</label>
-		<div class="custom-control custom-switch">
-			<input type="checkbox" class="custom-control-input"
-			       name="broadcastFTMS"
-			       [checked]="websocket.settings.broadcastFTMS"
-			       (change)="websocket.settings.broadcastFTMS = !websocket.settings.broadcastFTMS; saveChanges()"
-			       aria-describedby="broadcastFTMSHelp"
-			       id="broadcastFTMS">
-			<label class="custom-control-label"
-			       for="broadcastFTMS">{{ websocket.settings.broadcastFTMS ? 'Broadcasting!' : 'Not Broadcasting' }}</label>
-		</div>
-		<small class="form-text text-muted" id="broadcastFTMSHelp">
-			Should we broadcast Bluetooth's Fitness-Machine service? If you don't, then cadence won't
-			be communicated. This can be useful if you want to use a footpod instead.
-		</small>
-	</div>
-
-</form>
-<div class="text-center">
-
-	<span *ngIf="changesSaved" class="alert">
-		Your changes have been saved!
-	</span>
-
-	<div class="btn-group">
-		<button routerLink="/" type="button" class="btn btn-secondary">
-			Back to Dashboard
-		</button>
-	</div>
+<div class="page-head">
+	<h1>Settings</h1>
+	<span class="spacer"></span>
+	@if (dirty()) { <span class="muted" role="status">Unsaved changes</span> }
+	<button class="btn btn--primary" type="button" (click)="save()" [disabled]="saving() || !form()">{{ saving() ? 'Saving…' : 'Save' }}</button>
 </div>
 
+@if (form(); as f) {
+	<div class="settings">
+		<nav class="settings__nav" aria-label="Settings sections">
+			@for (s of sections; track s.id) {
+				<button type="button" class="settings__link" [attr.aria-current]="active() === s.id ? 'true' : null" (click)="go(s.id)">{{ s.label }}</button>
+			}
+		</nav>
 
-<pre>{{ websocket.current | json }}</pre>
+		<div class="settings__main">
+			<section class="card stack" id="treadmill" aria-labelledby="treadmill-title">
+				<div class="row">
+					<h2 class="card__title" id="treadmill-title">Treadmill</h2>
+					<span class="spacer"></span>
+					<span class="pill" [class.pill--ok]="treadmill()?.connected" [class.pill--warn]="!treadmill()?.connected">
+						<span class="pill__dot"></span>{{ treadmill()?.connected ? 'Connected' : 'Not connected' }} · {{ transportLabel() }}
+					</span>
+				</div>
+				@if (treadmill(); as t) {
+					@if (!t.connected && t.reason) { <p class="muted">{{ t.reason }}</p> }
+				}
+				<div class="setting-row">
+					<span class="setting-row__label" id="transport-label">Connection</span>
+					<div class="segmented" role="group" aria-labelledby="transport-label">
+						@for (t of transports; track t.value) {
+							<button type="button" [attr.aria-pressed]="f.transport === t.value" (click)="f.transport = t.value">{{ t.label }}</button>
+						}
+					</div>
+				</div>
+				@if (f.transport === 'wifi') {
+					<label class="setting-row">
+						<span class="setting-row__label">Address <span class="muted">(blank: search the network)</span></span>
+						<input class="input num setting-row__input" [(ngModel)]="f.ip" placeholder="192.168.1.50" [attr.aria-invalid]="errorFor('treadmill.ip') ? 'true' : null">
+					</label>
+					@if (errorFor('treadmill.ip'); as e) { <span class="field__error">{{ e }}</span> }
+				}
+				@if (f.transport === 'ble') {
+					<label class="setting-row">
+						<span class="setting-row__label">Bluetooth code <span class="muted">(4 hex characters)</span></span>
+						<input class="input num setting-row__input" [(ngModel)]="f.bleCode" maxlength="4" [attr.aria-invalid]="errorFor('treadmill.bleCode') ? 'true' : null">
+					</label>
+					@if (errorFor('treadmill.bleCode'); as e) { <span class="field__error">{{ e }}</span> }
+				}
+				<details class="settings__more">
+					<summary>Speed calibration</summary>
+					<div class="form-grid">
+						<label class="field">
+							<span class="field__label">Speed offset (km/h)</span>
+							<input class="input num" type="number" step="0.1" min="-2" max="2" [(ngModel)]="f.speedOffset">
+							@if (errorFor('speedOffset'); as e) { <span class="field__error">{{ e }}</span> }
+						</label>
+						<label class="field">
+							<span class="field__label">Speed multiplier</span>
+							<input class="input num" type="number" step="0.01" min="0.5" max="1.5" [(ngModel)]="f.speedMultiplier">
+							@if (errorFor('speedMultiplier'); as e) { <span class="field__error">{{ e }}</span> }
+						</label>
+					</div>
+				</details>
+			</section>
+
+			<app-console-readout />
+
+			<section class="card stack" id="limits" aria-labelledby="limits-title">
+				<h2 class="card__title" id="limits-title">Safety limits</h2>
+				<p class="muted">Zwifit refuses any speed or incline outside these, and outside what the treadmill reports.</p>
+				<div class="limit">
+					<div class="limit__head">
+						<span class="setting-row__label">Speed</span>
+						<span class="num">{{ f.minSpeed }} – {{ f.maxSpeed }} {{ prefs.speedLabel() }}</span>
+					</div>
+					<div class="limit__track" aria-hidden="true">
+						<span class="limit__fill" [style.left.%]="pct(f.minSpeed, 0, speedScale())" [style.width.%]="pct(f.maxSpeed, 0, speedScale()) - pct(f.minSpeed, 0, speedScale())"></span>
+						<span class="limit__knob" [style.left.%]="pct(f.minSpeed, 0, speedScale())"></span>
+						<span class="limit__knob" [style.left.%]="pct(f.maxSpeed, 0, speedScale())"></span>
+					</div>
+					<div class="form-grid">
+						<label class="field"><span class="field__label">Min ({{ prefs.speedLabel() }})</span>
+							<input class="input num" type="number" step="0.1" [(ngModel)]="f.minSpeed"></label>
+						<label class="field"><span class="field__label">Max ({{ prefs.speedLabel() }})</span>
+							<input class="input num" type="number" step="0.1" [(ngModel)]="f.maxSpeed"></label>
+					</div>
+				</div>
+				<div class="limit">
+					<div class="limit__head">
+						<span class="setting-row__label">Incline</span>
+						<span class="num">{{ f.minIncline }} – {{ f.maxIncline }} %</span>
+					</div>
+					<div class="limit__track" aria-hidden="true">
+						<span class="limit__fill" [style.left.%]="pct(f.minIncline, inclineFloor(f), 15)" [style.width.%]="pct(f.maxIncline, inclineFloor(f), 15) - pct(f.minIncline, inclineFloor(f), 15)"></span>
+						<span class="limit__knob" [style.left.%]="pct(f.minIncline, inclineFloor(f), 15)"></span>
+						<span class="limit__knob" [style.left.%]="pct(f.maxIncline, inclineFloor(f), 15)"></span>
+					</div>
+					<div class="form-grid">
+						<label class="field"><span class="field__label">Min (%)</span>
+							<input class="input num" type="number" step="0.5" [(ngModel)]="f.minIncline"></label>
+						<label class="field"><span class="field__label">Max (%)</span>
+							<input class="input num" type="number" step="0.5" [(ngModel)]="f.maxIncline"></label>
+					</div>
+				</div>
+				<label class="setting-row">
+					<span class="setting-row__label">Cool-down speed after a plan <span class="muted">({{ prefs.speedLabel() }})</span></span>
+					<input class="input num setting-row__input setting-row__input--short" type="number" step="0.1" [(ngModel)]="f.cooldown">
+				</label>
+				@if (errorFor('limits'); as e) { <span class="field__error">{{ e }}</span> }
+				@if (errorFor('cooldownKph'); as e) { <span class="field__error">{{ e }}</span> }
+			</section>
+
+			<section class="card stack" id="zwift" aria-labelledby="zwift-title">
+				<div class="row">
+					<h2 class="card__title" id="zwift-title">Zwift broadcast</h2>
+					<span class="spacer"></span>
+					@if (broadcast(); as b) {
+						<span class="pill" [class.pill--ok]="b.advertising" [class.pill--warn]="!b.advertising">
+							<span class="pill__dot"></span>{{ b.clients ? b.clients + ' connected' : (b.advertising ? 'Broadcasting' : 'Off') }}
+						</span>
+					}
+				</div>
+				@if (broadcast(); as b) {
+					@if (!b.available && b.reason) { <p class="muted">{{ b.reason }}</p> }
+				}
+				<div class="switch-row">
+					<span class="switch-row__text" id="sw-ftms"><strong>Fitness Machine</strong><span class="muted">Treadmill speed and incline · Zwift pairs it as Run Speed</span></span>
+					<button type="button" class="switch" role="switch" aria-labelledby="sw-ftms" [attr.aria-checked]="f.ftms" (click)="f.ftms = !f.ftms"><span class="switch__track"></span></button>
+				</div>
+				<div class="switch-row">
+					<span class="switch-row__text" id="sw-rsc"><strong>Footpod (Running Speed and Cadence)</strong><span class="muted">Adds cadence in Zwift, from a footpod or Stryd</span></span>
+					<button type="button" class="switch" role="switch" aria-labelledby="sw-rsc" [attr.aria-checked]="f.rsc" (click)="f.rsc = !f.rsc"><span class="switch__track"></span></button>
+				</div>
+				<div class="switch-row">
+					<span class="switch-row__text" id="sw-hr"><strong>Heart rate</strong><span class="muted">Re-broadcasts the heart rate shown on the dashboard</span></span>
+					<button type="button" class="switch" role="switch" aria-labelledby="sw-hr" [attr.aria-checked]="f.hr" (click)="f.hr = !f.hr"><span class="switch__track"></span></button>
+				</div>
+				<h3 class="settings__subtitle">Zwift devices</h3>
+				<app-zwift-devices />
+			</section>
+
+			<section class="card stack" id="sensors" aria-labelledby="sensors-title">
+				<div class="row">
+					<h2 class="card__title" id="sensors-title">Sensors</h2>
+					<span class="spacer"></span>
+					@if (ant(); as a) {
+						<span class="pill" [class.pill--ok]="a.available" [class.pill--warn]="!a.available"><span class="pill__dot"></span>{{ a.available ? 'ANT+ stick ready' : 'ANT+ off' }}</span>
+					}
+					<button class="btn" type="button" (click)="scanAll()" [disabled]="scanningAny() || (!canScan('ant') && !canScan('bluetooth'))">
+						@if (scanningAny()) { <span class="scan-dot" aria-hidden="true"></span>Scanning… } @else { Scan for sensors }
+					</button>
+				</div>
+				<p class="muted">Zwifit listens on ANT+ first and keeps Bluetooth free for the Zwift link. Pick Bluetooth only for a sensor that has no ANT+, ideally with a second Bluetooth adapter.</p>
+				@if (ant(); as a) {
+					@if (!a.available && a.reason) { <p class="muted">ANT+: {{ a.reason }}</p> }
+					@if (a.scan?.reason; as reason) { <p class="muted">{{ reason }}</p> }
+				}
+				@if (bluetooth(); as b) {
+					@if (b.reason) { <p class="muted">Bluetooth: {{ b.reason }}</p> }
+				}
+				<div class="switch-row">
+					<span class="switch-row__text" id="sw-ant"><strong>ANT+ USB stick</strong><span class="muted">Heart rate from a watch or strap, cadence and power from a Stryd or footpod · applies after a restart</span></span>
+					<button type="button" class="switch" role="switch" aria-labelledby="sw-ant" [attr.aria-checked]="f.ant" (click)="f.ant = !f.ant"><span class="switch__track"></span></button>
+				</div>
+
+				@for (m of metricCards(); track m.kind) {
+					<section class="metric-card" [attr.aria-labelledby]="'metric-' + m.kind">
+						<div class="metric-card__head">
+							<span [class]="'sensor-row__dot sensor-row__dot--' + m.kind" aria-hidden="true"></span>
+							<h3 class="metric-card__title" [id]="'metric-' + m.kind">{{ m.name }}</h3>
+							<span class="metric-card__value"><span class="num">{{ m.value ?? '–' }}</span><span class="tile__unit">{{ m.unit }}</span></span>
+						</div>
+						<div class="metric-card__source">
+							<span class="metric-card__label" [id]="'source-' + m.kind">Source</span>
+							<div class="segmented" role="group" [attr.aria-labelledby]="'source-' + m.kind">
+								@for (o of m.options; track o.value) {
+									<button type="button" [attr.aria-pressed]="sourceOf(f, m.kind) === o.value" (click)="setSource(f, m.kind, o.value)">{{ o.label }}</button>
+								}
+							</div>
+						</div>
+						<ul class="device-list" aria-live="polite">
+							@for (r of m.rows; track r.entry?.key ?? 'console') {
+								<li class="device" [class.device--on]="r.inUse">
+									<span class="device__badge" [class.device__badge--ble]="r.badge === 'BLE'">{{ r.badge }}</span>
+									<span class="device__text">
+										<strong>{{ r.entry?.name ?? 'Treadmill' }}</strong>
+										<span class="muted">{{ r.detail }}</span>
+									</span>
+									<span class="device__value num">{{ r.value }}</span>
+									<span class="device__status" [class.device__status--on]="r.inUse">{{ r.status }}</span>
+									@if (r.entry; as e) {
+										@if (isPicked(e)) {
+											<button class="btn btn--ghost device__action" type="button" (click)="forgetSensor(e)" [disabled]="busy() === e.key" [attr.aria-label]="'Forget ' + e.name">Forget</button>
+										}
+										@else {
+											<button class="btn btn--ghost device__action" type="button" (click)="connectSensor(e)" [disabled]="busy() === e.key" [attr.aria-label]="(r.inUse ? 'Always use ' : 'Use ') + e.name">{{ r.inUse ? 'Pin' : 'Use' }}</button>
+										}
+									}
+								</li>
+							}
+							@empty {
+								<li class="device device--empty muted">{{ m.empty }}</li>
+							}
+						</ul>
+						@if (m.kind === 'power') {
+							<div class="form-grid form-grid--3">
+								<label class="field"><span class="field__label">Threshold power (W)</span>
+									<input class="input num" type="number" min="50" max="1000" step="1" placeholder="Not set" [(ngModel)]="f.thresholdPower"></label>
+								<label class="field"><span class="field__label">Body weight (kg)</span>
+									<input class="input num" type="number" min="30" max="250" step="0.1" placeholder="Not set" [(ngModel)]="f.weightKg"></label>
+								<label class="field"><span class="field__label">Smoothing</span>
+									<select class="select" [(ngModel)]="f.powerSmoothing">
+										<option [ngValue]="1">1 s (as sent)</option>
+										<option [ngValue]="3">3 s average</option>
+										<option [ngValue]="10">10 s average</option>
+									</select></label>
+							</div>
+							@if (errorFor('sensors.thresholdPower'); as e) { <span class="field__error">{{ e }}</span> }
+							@if (errorFor('sensors.weightKg'); as e) { <span class="field__error">{{ e }}</span> }
+							<label class="toggle"><input type="checkbox" [(ngModel)]="f.ftmsPower"> Send power to Zwift with the treadmill data (Fitness Machine)</label>
+							<label class="toggle"><input type="checkbox" [(ngModel)]="f.powerMeter"> Also broadcast it as a Bluetooth power meter (in Zwift, pair "Zwifit" as the Power Source)</label>
+							<p class="field__hint">Power is always shown live, charted, and saved in history and the .fit file. Zwift running still moves you by speed, so power there is for display only. Broadcast changes apply after a restart.</p>
+						}
+						@if (m.kind === 'cadence') {
+							<label class="toggle"><input type="checkbox" [(ngModel)]="f.rsc"> Send cadence to Zwift (Bluetooth footpod, Running Speed and Cadence)</label>
+						}
+						@if (m.kind === 'hr') {
+							<label class="toggle"><input type="checkbox" [(ngModel)]="f.hr"> Send heart rate to Zwift (Bluetooth heart rate sensor)</label>
+						}
+					</section>
+				}
+				<p class="field__hint">"Use" (or "Pin" for the one in use) picks that sensor over any other in range and remembers it; "Forget" goes back to the first one found. Scanning ANT+ pauses ANT+ readings for about 15 seconds. On a Garmin watch, turn on "Broadcast Heart Rate"; a Stryd sends data once it is awake (tap it).</p>
+			</section>
+
+			<section class="card stack" id="display" aria-labelledby="units-title">
+				<h2 class="card__title" id="units-title">Display</h2>
+				<div class="setting-row">
+					<span class="setting-row__label" id="units-label">Units</span>
+					<div class="segmented" role="group" aria-labelledby="units-label">
+						<button type="button" [attr.aria-pressed]="f.metric" (click)="f.metric = true">km · km/h</button>
+						<button type="button" [attr.aria-pressed]="!f.metric" (click)="f.metric = false">mi · mph</button>
+					</div>
+				</div>
+				<div class="setting-row">
+					<span class="setting-row__label" id="theme-label">Theme <span class="muted">(this browser)</span></span>
+					<div class="segmented" role="group" aria-labelledby="theme-label">
+						@for (t of themes; track t.value) {
+							<button type="button" [attr.aria-pressed]="prefs.theme() === t.value" (click)="prefs.setTheme(t.value)">{{ t.label }}</button>
+						}
+					</div>
+				</div>
+				<div class="setting-row">
+					<label class="setting-row__label" for="max-hr">Maximum heart rate <span class="muted">(zones, this browser)</span></label>
+					<input class="input setting-row__input setting-row__input--short num" id="max-hr" type="number" min="120" max="230" step="1"
+						[value]="prefs.maxHr()" (change)="prefs.setMaxHr($any($event.target).valueAsNumber)">
+				</div>
+				<p class="field__hint">Zones: Z1 below 60 % of the maximum, then 70, 80 and 90 %. Limits are shown in the units chosen when this page loaded; save, then they re-display.</p>
+			</section>
+
+			<section class="card stack" id="devices" aria-labelledby="devices-title">
+				<div class="row">
+					<h2 class="card__title" id="devices-title">Paired devices</h2>
+					<span class="spacer"></span>
+					<button class="btn" type="button" (click)="newCode()">New pairing code</button>
+				</div>
+				<ul class="list">
+					@for (d of devices(); track d.id) {
+						<li class="list-item">
+							@if (renaming() === d.id) {
+								<input class="input zdev__input" name="pairedDeviceName" [(ngModel)]="renameDraft" maxlength="40"
+									aria-label="Device name" (keydown.enter)="saveRename(d)" (keydown.escape)="renaming.set(null)">
+								@if (d.trusted) {
+									<input class="input zdev__input num" name="pairedDeviceIp" [(ngModel)]="addressDraft" maxlength="45"
+										aria-label="IP address" placeholder="192.168.1.50" (keydown.enter)="saveRename(d)" (keydown.escape)="renaming.set(null)">
+								}
+								<button class="btn" type="button" (click)="saveRename(d)">Save</button>
+								<button class="btn btn--ghost" type="button" (click)="renaming.set(null)">Cancel</button>
+							}
+							@else {
+								<div class="list-item__main">
+									<div class="list-item__title">{{ d.name }} @if (d.current) { <span class="pill pill--accent">This device</span> }</div>
+									<div class="muted">Paired {{ d.pairedAt | date: 'mediumDate' }} · last seen {{ d.lastSeenAt | date: 'medium' }}@if (d.ip) { from <span class="num">{{ d.ip }}</span> } · expires {{ d.expiresAt | date: 'mediumDate' }}</div>
+									@if (d.trusted) { <div class="pill pill--accent device-trust">No code needed from {{ d.ip }}</div> }
+								</div>
+								@if (d.ip) {
+									<button class="btn btn--ghost" type="button" (click)="toggleTrust(d)"
+										[attr.aria-label]="(d.trusted ? 'Stop trusting the address of ' : 'Trust the address of ') + d.name">{{ d.trusted ? 'Untrust address' : 'Trust address' }}</button>
+								}
+								<button class="btn btn--ghost" type="button" (click)="startRename(d)" [attr.aria-label]="(d.trusted ? 'Edit ' : 'Rename ') + d.name">{{ d.trusted ? 'Edit' : 'Rename' }}</button>
+								@if (d.current) {
+									<button class="btn" type="button" (click)="unpair()">Unpair</button>
+								}
+								@else {
+									<button class="btn btn--ghost" type="button" (click)="revoke(d)" [attr.aria-label]="'Remove ' + d.name">Remove</button>
+								}
+							}
+						</li>
+					}
+				</ul>
+				<form class="add-client" (submit)="$event.preventDefault(); addByAddress()" aria-labelledby="add-client-title">
+					<div class="eyebrow" id="add-client-title">Add a device by IP address (no pairing code)</div>
+					<div class="add-client__row">
+						<label class="field"><span class="field__label">Name</span>
+							<input class="input" name="newClientName" [(ngModel)]="newClientName" maxlength="40" placeholder="Surface Hub"></label>
+						<label class="field"><span class="field__label">IP address</span>
+							<input class="input num" name="newClientIp" [(ngModel)]="newClientIp" maxlength="45" placeholder="192.168.1.50" inputmode="decimal" autocomplete="off"></label>
+						<button class="btn" type="submit">Add</button>
+					</div>
+				</form>
+				@if (pairingCode(); as issued) {
+					<div class="pair-code" role="status" aria-live="polite">
+						<div>
+							<div class="eyebrow">Pairing code</div>
+							<div class="pair-code__value">{{ issued.code }}</div>
+							<div class="muted">Type it on the new device. Works for one device until {{ issued.expiresAt | date: 'HH:mm' }}.</div>
+						</div>
+						<span class="spacer"></span>
+						<button class="btn btn--ghost" type="button" (click)="hideCode()">Hide</button>
+					</div>
+				}
+				<p class="field__hint">"New pairing code" shows a code here (and in the Zwifit console) for pairing another device. It works once and for 10 minutes; earlier codes stop working. "Trust address" lets a paired device that won't keep its pairing (e.g. a locked-down Surface Hub) in from its address, without a code.</p>
+			</section>
+
+			<section class="card stack" id="server" aria-labelledby="server-title">
+				<h2 class="card__title" id="server-title">Server</h2>
+				<div class="form-grid">
+					<label class="field"><span class="field__label">Port</span>
+						<input class="input num" type="number" min="1024" max="65535" [(ngModel)]="f.port">
+						@if (errorFor('server.port'); as e) { <span class="field__error">{{ e }}</span> }</label>
+					<label class="field"><span class="field__label">Listen on</span>
+						<select class="select" [(ngModel)]="f.host">
+							<option value="0.0.0.0">Whole network (IPv4)</option>
+							<option value="::">Whole network (IPv6)</option>
+							<option value="127.0.0.1">This computer only</option>
+							<option value="::1">This computer only (IPv6)</option>
+						</select></label>
+				</div>
+				<p class="muted">Port and address apply after Zwifit restarts. Save first.</p>
+				<div class="row">
+					<div class="muted">Restart Zwifit (e.g. after an update, or to reconnect the treadmill and sensors). Paired devices stay paired; this page reconnects by itself.</div>
+					<span class="spacer"></span>
+					<button class="btn" type="button" (click)="restarter.restart()" [disabled]="restarter.restarting()">{{ restarter.restarting() ? 'Restarting…' : 'Restart Zwifit' }}</button>
+				</div>
+			</section>
+		</div>
+	</div>
+}
+@else {
+	<p class="empty">Loading…</p>
+}

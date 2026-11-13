@@ -23,16 +23,17 @@ A clear and concise description of what you expected to happen.
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+**Where Zwifit runs (please complete the following information):**
+ - OS: [e.g. Ubuntu 24.04 on WSL, Raspberry Pi OS, macOS 15, Windows 11]
+ - Node.js version: [output of `node -v`]
+ - Treadmill and connection: [e.g. NordicTrack C 990, `wifi` / `ble` / `simulated`]
+ - Bluetooth adapter: [e.g. TP-Link UB500]
+ - Output of `bash scripts/wsl/check-bluetooth.sh` (Linux/WSL only)
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+**Browser used for the control page:**
+ - Device and browser: [e.g. iPhone 15, Safari 18]
+
+Please don't paste pairing codes, the `zwifit_device` cookie or files from your data folder.
 
 **Additional context**
 Add any other context about the problem here.

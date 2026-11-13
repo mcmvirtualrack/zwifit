@@ -1,0 +1,5 @@
+# Shell scripts and udev rules run on Linux/macOS; keep them LF even in Windows checkouts.
+*.sh text eol=lf
+*.rules text eol=lf
+# PowerShell scripts run on Windows.
+*.ps1 text eol=crlf

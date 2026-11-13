@@ -1,0 +1,3224 @@
+{
+	"schemaVersion": 1,
+	"name": "Intervals 4 x 400 m",
+	"description": "Warm-up, four fast 400 m repeats with walking recovery, cool-down.",
+	"authoredUnits": "imperial",
+	"items": [
+		{
+			"kind": "step",
+			"id": "s0",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s1",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s2",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s3",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s4",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s5",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s6",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s7",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s8",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s9",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s10",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s11",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s12",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s13",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s14",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s15",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s16",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s17",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s18",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s19",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s20",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s21",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s22",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s23",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s24",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s25",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s26",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s27",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s28",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s29",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s30",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s31",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s32",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s33",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s34",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s35",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s36",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s37",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s38",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s39",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s40",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s41",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s42",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s43",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s44",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s45",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s46",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s47",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s48",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s49",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s50",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s51",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s52",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s53",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s54",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s55",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s56",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s57",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s58",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s59",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s60",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s61",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s62",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s63",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s64",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s65",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s66",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s67",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s68",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s69",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s70",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s71",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s72",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s73",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s74",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s75",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s76",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s77",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s78",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s79",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s80",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s81",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s82",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s83",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s84",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s85",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s86",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s87",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s88",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s89",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s90",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s91",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s92",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s93",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s94",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s95",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s96",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s97",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s98",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s99",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s100",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s101",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s102",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s103",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s104",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s105",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s106",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s107",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s108",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s109",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s110",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s111",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s112",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s113",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s114",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s115",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s116",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s117",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s118",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s119",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s120",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s121",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s122",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s123",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s124",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s125",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s126",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s127",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s128",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s129",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s130",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s131",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s132",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s133",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s134",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s135",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s136",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s137",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s138",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s139",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s140",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s141",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s142",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s143",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s144",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s145",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s146",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s147",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s148",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s149",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s150",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s151",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s152",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s153",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s154",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s155",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s156",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s157",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s158",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s159",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s160",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s161",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s162",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s163",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s164",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s165",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s166",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s167",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s168",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s169",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s170",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s171",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s172",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s173",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s174",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s175",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s176",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s177",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s178",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s179",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s180",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s181",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s182",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s183",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s184",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s185",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s186",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s187",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s188",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s189",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s190",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s191",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s192",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s193",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s194",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s195",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s196",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s197",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s198",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s199",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "step",
+			"id": "s200",
+			"label": "Warm-up",
+			"targetKph": 6.437,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		}
+	]
+}

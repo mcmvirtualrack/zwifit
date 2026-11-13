@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zwifit.local/schemas/zwift-devices-forget.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["address"],
+  "properties": {
+    "address": { "type": "string", "pattern": "^[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}$" }
+  }
+}

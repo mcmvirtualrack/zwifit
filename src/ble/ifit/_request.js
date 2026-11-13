@@ -107,6 +107,8 @@ function getWriteValues(writes) {
  * and read results.
  */
 function initTxAndRx(sportsEquipment, callback) {
+	let rx;
+	let tx;
 
 	const serviceUUIDs = [Constants.BleUUID.Service.TxRx];
 	const characteristicUUIDs = [Constants.BleUUID.Characteristic.Rx, Constants.BleUUID.Characteristic.Tx];

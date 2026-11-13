@@ -1,0 +1,4 @@
+# Lets Zwifit (running as your user, in the plugdev group) use a Garmin ANT+ USB stick:
+# USB2 / USBStick2 (0fcf:1008) and USB-m (0fcf:1009). Install with:
+#   sudo cp scripts/wsl/99-zwifit-ant.rules /etc/udev/rules.d/ && sudo udevadm control --reload
+SUBSYSTEM=="usb", ATTR{idVendor}=="0fcf", ATTR{idProduct}=="100[89]", MODE="0660", GROUP="plugdev"

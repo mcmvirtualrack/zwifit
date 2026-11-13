@@ -1,0 +1,80 @@
+{
+	"schemaVersion": 1,
+	"name": "Intervals 6×",
+	"description": "Quickstart scenario 4.",
+	"authoredUnits": "imperial",
+	"items": [
+		{
+			"kind": "step",
+			"id": "warmup",
+			"label": "Warm-up",
+			"targetKph": 9.656064,
+			"entered": {
+				"form": "pace",
+				"unit": "min/mi",
+				"value": "10:00"
+			},
+			"targetIncline": 1,
+			"end": {
+				"type": "time",
+				"seconds": 300
+			}
+		},
+		{
+			"kind": "block",
+			"id": "block",
+			"label": "Intervals",
+			"repeat": 6,
+			"steps": [
+				{
+					"kind": "step",
+					"id": "fast",
+					"label": "Fast",
+					"targetKph": 12.874752,
+					"entered": {
+						"form": "speed",
+						"unit": "mph",
+						"value": 8
+					},
+					"targetIncline": 1,
+					"end": {
+						"type": "time",
+						"seconds": 120
+					}
+				},
+				{
+					"kind": "step",
+					"id": "recover",
+					"label": "Recover",
+					"targetKph": 8.04672,
+					"entered": {
+						"form": "speed",
+						"unit": "mph",
+						"value": 5
+					},
+					"targetIncline": 1,
+					"end": {
+						"type": "time",
+						"seconds": 60
+					}
+				}
+			]
+		},
+		{
+			"kind": "step",
+			"id": "cooldown",
+			"label": "Cool-down",
+			"targetKph": 6.437376,
+			"entered": {
+				"form": "speed",
+				"unit": "mph",
+				"value": 4
+			},
+			"targetIncline": 0,
+			"end": {
+				"type": "distance",
+				"metres": 804.672
+			}
+		}
+	]
+}

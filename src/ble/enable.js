@@ -75,7 +75,7 @@ function processPeripheralError(peripheral, error, exit = false) {
 
 function loadTreadmillDetails() {
 	
-	const noble = require('noble');
+	const noble = require('@stoprocent/noble');
 	
 	// start scanning for sports equiments
 	noble.on('stateChange', (state) => {
@@ -383,7 +383,7 @@ function startSimulator(pt = false) {
 
 	process.env['BLENO_DEVICE_NAME'] = settings.bleDeviceName;
 	
-	const bleno = require('bleno');
+	const bleno = require('@stoprocent/bleno');
 	const PrimaryService = bleno.PrimaryService;
 	const Characteristic = bleno.Characteristic;
 	
@@ -411,6 +411,8 @@ function startSimulator(pt = false) {
 	};
 
 	const onWriteRequest = (data, offset, withoutResponse, callback) => {
+		let buffer;
+		let activationCode;
 		if (maxValueSize !== -1) {
 			const bufferSize = offset + maxValueSize > data.length ? data.length - offset : maxValueSize;
 			buffer = Buffer.alloc(bufferSize);
@@ -603,7 +605,7 @@ function buildAdvertisingData(serviceUuids) {
 	let serviceUuids128bit = [];
 
 	if (serviceUuids && serviceUuids.length) {
-		for (i = 0; i < serviceUuids.length; i++) {
+		for (let i = 0; i < serviceUuids.length; i++) {
 			var serviceUuid = Buffer.from(serviceUuids[i].match(/.{1,2}/g).reverse().join(''), 'hex');
 
 			if (serviceUuid.length === 2) {
@@ -635,7 +637,7 @@ function buildAdvertisingData(serviceUuids) {
 		pos = advertisementData.writeUInt8(1 + 2 * serviceUuids16bit.length, pos);
 		pos = advertisementData.writeUInt8(0x03, pos);
 
-		for (i = 0; i < serviceUuids16bit.length; i++) {
+		for (let i = 0; i < serviceUuids16bit.length; i++) {
 			serviceUuids16bit[i].copy(advertisementData, pos);
 			pos += serviceUuids16bit[i].length;
 		}
@@ -645,7 +647,7 @@ function buildAdvertisingData(serviceUuids) {
 		pos = advertisementData.writeUInt8(1 + 16 * serviceUuids128bit.length, pos);
 		pos = advertisementData.writeUInt8(0x07, pos);
 
-		for (i = 0; i < serviceUuids128bit.length; i++) {
+		for (let i = 0; i < serviceUuids128bit.length; i++) {
 			serviceUuids128bit[i].copy(advertisementData, pos);
 			pos += serviceUuids128bit[i].length;
 		}
