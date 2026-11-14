@@ -6,7 +6,8 @@
 
 **Status**: Implemented; owner hardware checks pending (updated 2026-11-02: sensors, broadcast of
 sensor data, redesign; 2026-11-13: training programs, HTTPS port, pairing code in app; 2026-11-14:
-status)
+status, free runs, sensor names, Bluetooth/Zwift coexistence, measured speed to Zwift, incline in
+history, custom programs, zone colours, incline over the speed chart, tablet layout)
 
 **Input**: User description: "refactor the code so that it can run on linux, mac or windows, improve
 the UI and ability to create a training plan that will configure the speed, incline and intervals of
@@ -37,6 +38,33 @@ every steps. Use the Ubuntu WSL installed on this windows to deploy the program 
   after 10 minutes.
 - Q: What if a browser insists on HTTPS (a managed Edge on a Surface Hub)? → A: HTTPS can be
   served on a second port next to plain HTTP, with a certificate the owner provides.
+
+### Session 2026-11-14
+
+- Q: Should runs started without a plan (Start on the dashboard or the console) be kept? → A: Yes,
+  as "free runs" in History, controlled from the dashboard with Pause / Resume / Finish. A run
+  shorter than one minute of moving is not saved unless Finish is pressed.
+- Q: Which ANT+ devices should Settings show? → A: Every device heard, live and from the last scan,
+  with when it was last heard; ANT+ and Bluetooth devices can be given custom names.
+- Q: Zwift loses Zwifit when Bluetooth sensors are used on the same adapter. → A: Bluetooth sensors
+  are blocked by default while they share the adapter with the Zwift broadcast (opt-in setting),
+  and the broadcast re-advertises after an adapter reset.
+- Q: Which speed goes to Zwift? → A: The actual (measured) belt speed when the treadmill reports
+  one; otherwise the set speed.
+- Q: Should History show incline? → A: Yes: average and maximum incline, metres climbed and an
+  incline chart for runs where the belt was tilted.
+- Q: Can the user build their own multi-week program? → A: Yes: name, start week, 1–52 weeks
+  (16 by default) and, for each week and weekday, one of their own plans or rest.
+- Q: How are heart rate and power shown against zones? → A: Lines, sparklines, tile values and
+  tags are coloured by zone (Z1 grey, Z2 blue, Z3 green, Z4 orange, Z5 red). Power zones come from
+  the threshold power (Z1 easy < 80 %, Z2 moderate 80–90, Z3 threshold 90–100, Z4 interval
+  100–115, Z5 repetition ≥ 115). Time in zone is shown inside the live heart-rate lane (following
+  the 2 min / 10 min / workout window) and per workout in History.
+- Q: Where does incline go on the dashboard? → A: A slim incline row (−/+ and presets) under the
+  belt and speed controls; the incline trace is drawn over the live speed chart on its own scale.
+- Q: How should the page behave on an iPad? → A: Use the full width (up to 1600 px), size the
+  live lanes to the screen height, tighter tablet spacing, a full-screen button where the browser
+  supports it, and open full screen when added to the home screen.
 
 ### Session 2026-11-02
 
@@ -423,6 +451,15 @@ it, and see the day marked done.
   file readable by common spreadsheet programs containing summary, per-step and sample data.
 - **FR-019e**: Workouts MUST be kept until the user deletes them, and MUST survive app restarts and
   upgrades. A workout interrupted by an app crash MUST still be saved up to the last sample.
+- **FR-019h**: A run without a plan ("free run") MUST be recorded once the belt has moved for one
+  minute (or when the user presses Finish), and controlled from the dashboard with Pause (belt
+  stops, run kept), Resume and Finish (saved as completed). It MUST end when a plan starts, when the
+  treadmill disconnects or after 30 minutes paused, and is shown in History without a steps table.
+- **FR-019i**: A workout's totals MUST include average and maximum incline and metres climbed when
+  the belt was tilted, and History MUST chart incline for such runs.
+- **FR-019j**: A workout's detail page MUST show the time and share in each heart-rate zone and,
+  when a threshold power is set and power was recorded, in each power zone, computed from the
+  samples (gaps over 5 s count 5 s), with each zone's limits.
 - **FR-019f**: Workout history and heart-rate data are personal health data: they MUST only be
   viewable or exportable by paired devices and MUST NOT be written to application logs.
 
@@ -448,14 +485,28 @@ it, and see the day marked done.
   heart rate, cadence and power (each with a sparkline); a live chart with the speed readout over a
   speed lane and separate heart-rate, cadence and power lanes on one time axis, with a
   2 min / 10 min / whole-workout switch; the plan step strip; Start / Stop, speed −/+ and speed
-  presets (km/h: 4, 6, 8, 10, 12, 14, 16, 20, 22); an incline card with its graph, −/+ and presets
-  0–12 % in 2 % steps; and time in each heart-rate zone.
+  presets (km/h: 4, 6, 8, 10, 12, 14, 16, 20, 22); a slim incline row under them with −/+ and
+  presets 0–12 % in 2 % steps, the incline trace drawn over the speed lane on its own scale (once
+  the belt has been tilted in the window); and time in each heart-rate zone inside the heart-rate
+  lane, over the chosen window. (Amended 2026-11-14: the incline card and zone card were folded
+  into the live chart.)
 - **FR-020d**: Heart-rate, cadence and power lanes, tiles and the zone card MUST appear only after
   that metric has been reported (FR-030). The heart-rate graph MUST show whenever heart rate is
   reported, with or without a run or a connected treadmill.
 - **FR-020e**: Heart-rate zones MUST be derived from a maximum heart rate set per browser (default
-  190, 120–230): Z1 below 60 %, Z2 60–70 %, Z3 70–80 %, Z4 80–90 %, Z5 from 90 %. The heart-rate
-  lane MUST shade Z3–Z4.
+  190, 120–230): Z1 below 60 %, Z2 60–70 %, Z3 70–80 %, Z4 80–90 %, Z5 from 90 %. Heart-rate lines
+  (live lane, tile sparkline, History chart), the tile value and the live tag MUST be coloured by
+  zone (Z1 grey, Z2 blue, Z3 green, Z4 orange, Z5 red, light and dark variants) with each zone
+  faintly shaded behind the line. (Amended 2026-11-14; previously only Z3–Z4 were shaded.)
+- **FR-020f**: When a threshold power is set (FR-029), power MUST be coloured the same way by
+  running power zone: Z1 easy below 80 %, Z2 moderate 80–90 %, Z3 threshold 90–100 %, Z4 interval
+  100–115 %, Z5 repetition from 115 %, on the power tiles, the live power lane and the History power
+  chart; without a threshold, power keeps its single colour.
+- **FR-020g**: On tablets (641–1366 px) the layout MUST tighten so the dashboard fits a landscape
+  iPad with little or no scrolling: page up to 1600 px wide, live lanes sized to the screen height,
+  up to five tiles in a row. A full-screen button MUST be offered where the browser supports the
+  Fullscreen API (not in an installed app), and the app MUST open full screen, clear of the safe
+  areas, when added to an iPad / iPhone home screen.
 - **FR-022a**: The Workout page MUST show the plan name, elapsed / total time and Pause / Skip step /
   Stop at the top; the plan as a speed profile with done, current and remaining steps; a Now card
   with the actual speed, an "On target" (or target) chip, incline and pace, faint power and
@@ -483,7 +534,7 @@ it, and see the day marked done.
   MUST say which source each value came from.
 - **FR-029**: Power MUST be averaged over a chosen 1, 3 (default) or 10 s. The user MAY set a
   threshold power (drawn as a dashed line and shown as a percentage) and body weight (shown as
-  W/kg); both are kept in the server settings.
+  W/kg); both are kept in the server settings. The threshold also sets the power zones (FR-020f).
 - **FR-030**: A sensor reading older than 5 s MUST no longer be used. While the treadmill is
   disconnected, its own heart rate and cadence MUST be ignored. Implausible readings MUST be
   ignored.
@@ -493,6 +544,14 @@ it, and see the day marked done.
 - **FR-032**: Bluetooth sensors MUST NOT be connected unless the user chose them, and the Bluetooth
   library MUST NOT be loaded for sensors until a Bluetooth scan or a remembered Bluetooth sensor
   needs it. Scanning MUST be shared with the Bluetooth treadmill so one never stops the other's.
+- **FR-032a**: While Bluetooth sensors would share the adapter with the Zwift broadcast (one
+  adapter on Linux), Bluetooth sensor scans and connections MUST be blocked, with the reason shown,
+  unless the user turns on "Allow Bluetooth sensors while broadcasting to Zwift"; after any adapter
+  reset the broadcast MUST re-advertise within about a second.
+- **FR-027a**: Settings MUST list ANT+ devices in range (heard now and in the last scan, with the
+  scan time and when each was last heard) and let the user give any ANT+ or Bluetooth device a
+  custom name (up to 40 characters, up to 64 names, kept in settings; empty clears it). Custom names
+  are used wherever the device is listed.
 
 **Broadcast to Zwift**
 
@@ -501,6 +560,8 @@ it, and see the day marked done.
   rate, once a second, nothing while none is reported), running power inside the Fitness Machine
   data (off by default), and a Cycling Power sensor carrying the chosen power (off by default,
   silent while no power is reported). Broadcast changes apply after a restart.
+- **FR-033a**: The speed sent to Zwift MUST be the measured belt speed when the treadmill reports
+  one (sent as is, without easing); only otherwise the set or estimated speed.
 - **FR-034**: Settings MUST list devices that have connected to the broadcast, with the services
   they read, and let the user rename and forget them.
 
@@ -515,6 +576,12 @@ it, and see the day marked done.
 - **FR-037**: Starting a program day MUST save its run as a plan (once) and play it; the program
   MUST show each day as done, missed, today or upcoming, and link to its result in History.
   Deleting a program keeps plans and history made from it.
+- **FR-038**: Users MUST be able to build their own program: a name, a start date (week 1 starts on
+  that week's Monday), 1–52 weeks (16 by default) and, for each week and weekday, one of their plans
+  or rest, with "copy to next week", "copy to every later week" and "clear week", and each week's
+  total time. Each day keeps a copy of the chosen plan. Editing MUST keep the progress of days that
+  still run the same plan on the same date. A day after the last week, two workouts on one day or a
+  missing plan MUST be refused.
 
 **Security**
 
@@ -561,15 +628,19 @@ it, and see the day marked done.
 - **Step Result**: Actual outcome of one step in a workout. Attributes: step target values, actual
   average speed/incline, time and distance spent, average/max heart rate, whether manually
   overridden.
-- **Training program**: Name, goal, weeks, race and start dates, run days and easy speed; and its
-  run days, each with date, week, phase, title, description, the run's steps and, once started,
-  the plan it was saved as. A day is done when a workout of that plan completed.
+- **Training program**: Name, goal (or "custom" for one built by the user), weeks, race date (none
+  for custom) and start date, run days and easy speed; and its run days, each with date, week,
+  phase, title, description, the run's steps, for custom programs the plan it was copied from, and,
+  once started, the plan it was saved as. A day is done when a workout of that plan completed.
+- **Free run**: A workout without a plan: started by moving the belt, states idle / running /
+  paused, saved with the plan name "Free run" and no step targets.
 - **Sample**: A point-in-time reading during a workout: timestamp, speed, incline, distance, heart
   rate (or missing), and cadence and power when reported.
 - **Treadmill Limits**: Min/max speed and incline that all plan steps and commands are checked
   against; part of settings.
 - **Settings**: Existing connection and broadcast settings plus units, treadmill limits,
-  cool-down walking speed, sensor sources, chosen sensors, power smoothing, threshold power, body
+  cool-down walking speed, sensor sources, chosen sensors, custom sensor names, whether Bluetooth
+  sensors may share the adapter with the Zwift broadcast, power smoothing, threshold power, body
   weight and the power broadcast switches.
 - **Sensor**: An ANT+ device (device number, what it measures, maker and battery when it says) or a
   Bluetooth peripheral (id, advertised name, battery) that reports heart rate, cadence and/or

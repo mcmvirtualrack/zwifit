@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { HrHistoryService } from '../core/hr-history.service';
 import { RestartService } from '../core/restart.service';
@@ -6,6 +6,10 @@ import { SocketService } from '../core/socket.service';
 import { ToastService } from '../core/toast.service';
 
 const ACTIVE = ['waiting', 'running', 'paused', 'resuming'];
+
+// The Fullscreen API, with Safari's (iPad) prefixed names.
+type FsDocument = Document & { webkitFullscreenElement?: Element | null; webkitExitFullscreen?: () => Promise<void> | void; webkitFullscreenEnabled?: boolean };
+type FsElement = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
 
 // The page frame: the brand (with the running plan, if any) on the left and the page links as a
 // segmented control on the top right; on narrow screens the links wrap below the brand.
@@ -24,6 +28,15 @@ const ACTIVE = ['waiting', 'running', 'paused', 'resuming'];
 					<span class="pill pill--danger" aria-live="polite"><span class="pill__dot"></span>Reconnecting…</span>
 				}
 				<span class="spacer"></span>
+				@if (canFullscreen) {
+					<button class="btn topbar__restart" type="button" (click)="toggleFullscreen()"
+						[attr.aria-label]="fullscreen() ? 'Exit full screen' : 'Full screen'" [attr.title]="fullscreen() ? 'Exit full screen' : 'Full screen'" [attr.aria-pressed]="fullscreen()">
+						<svg class="topbar__restart-icon" viewBox="0 0 24 24" aria-hidden="true">
+							@if (fullscreen()) { <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /> }
+							@else { <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /> }
+						</svg>
+					</button>
+				}
 				<button class="btn topbar__restart" type="button" (click)="restarter.restart()" [disabled]="restarter.restarting() || !socket.connected()"
 					[attr.aria-label]="restarter.restarting() ? 'Restarting Zwifit' : 'Restart Zwifit'" [attr.title]="restarter.restarting() ? 'Restarting…' : 'Restart Zwifit'">
 					<svg class="topbar__restart-icon" [class.topbar__restart-icon--spin]="restarter.restarting()" viewBox="0 0 24 24" aria-hidden="true">
@@ -49,6 +62,13 @@ const ACTIVE = ['waiting', 'running', 'paused', 'resuming'];
 	`
 })
 export class ShellComponent {
+	// Full screen: offered where the browser supports it (iPad Safari, desktop browsers; not iPhone)
+	// and not already running as a home-screen app.
+	private readonly doc = document as FsDocument;
+	protected readonly canFullscreen = !!(this.doc.fullscreenEnabled || this.doc.webkitFullscreenEnabled)
+		&& !window.matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches;
+	protected readonly fullscreen = signal(false);
+
 	protected readonly socket = inject(SocketService);
 	protected readonly toast = inject(ToastService);
 	protected readonly restarter = inject(RestartService);
@@ -61,6 +81,31 @@ export class ShellComponent {
 		{ path: '/history', label: 'History' },
 		{ path: '/settings', label: 'Settings' }
 	];
+	constructor() {
+		const update = () => this.fullscreen.set(!!(this.doc.fullscreenElement || this.doc.webkitFullscreenElement));
+		this.doc.addEventListener('fullscreenchange', update);
+		this.doc.addEventListener('webkitfullscreenchange', update);
+		inject(DestroyRef).onDestroy(() => {
+			this.doc.removeEventListener('fullscreenchange', update);
+			this.doc.removeEventListener('webkitfullscreenchange', update);
+		});
+	}
+
+	protected async toggleFullscreen(): Promise<void> {
+		try {
+			if (this.fullscreen()) {
+				await (this.doc.exitFullscreen ? this.doc.exitFullscreen() : this.doc.webkitExitFullscreen?.());
+			}
+			else {
+				const el = document.documentElement as FsElement;
+				await (el.requestFullscreen ? el.requestFullscreen() : el.webkitRequestFullscreen?.());
+			}
+		}
+		catch {
+			this.toast.show('Full screen is not available in this browser.');
+		}
+	}
+
 	protected readonly planActive = computed(() => ACTIVE.includes(this.socket.playback()?.state ?? 'idle'));
 	// "Intervals 6× · step 7 of 13" while a plan runs.
 	protected readonly context = computed(() => {

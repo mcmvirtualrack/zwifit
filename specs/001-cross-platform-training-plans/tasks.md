@@ -289,6 +289,25 @@ FR-026–FR-034.
 - [X] T140 Zwifit's own CA for HTTPS so devices can trust it (install as app): scripts/wsl/make-cert.sh, scripts/wsl/README.md
 - [ ] T138 Owner: generate a program, run a day on the treadmill, check it is marked done
 
+## Phase 11: Additions (2026-11-14)
+
+Requested by the owner while testing; spec Session 2026-11-14, FR-019h–j, FR-020c/e/f/g (amended),
+FR-027a, FR-029, FR-032a, FR-033a, FR-038.
+
+- [X] T150 Shutdown time limits: the child exits within 10 s and the supervisor kills it after 15 s: app.js
+- [X] T151 ANT+ devices in range (heard + last scan, last heard time): src/adapters/sensors/ant.js, test/unit/adapters/ant.test.js, app/settings/*
+- [X] T152 Custom names for ANT+ and Bluetooth devices (`sensors:rename`): src/api/socket/sensors.js, src/contracts/schemas/sensors-rename.schema.json, settings.schema.json, test/unit/api/sensorsSocket.test.js, app/settings/*
+- [X] T153 Free runs (Pause / Resume / Finish, `control:finish`, status `freeRun`): src/core/history/freeRun.js, recorder.js, src/api/socket/control.js, status.js, src/app.js, app/control/*, test/unit/core/history/freeRun.test.js, test/integration/control.test.js
+- [X] T154 Bluetooth sensors blocked while sharing the adapter with the Zwift broadcast (opt-in `sensors.bluetoothWithZwift`); re-advertise after a noble adapter reset: src/adapters/sensors/ble.js, src/adapters/broadcast/bleno.js, src/app.js, test/unit/adapters/bleSensors.test.js, bleno.test.js
+- [X] T155 Measured belt speed to Zwift (`speedSource`, no easing when measured): src/adapters/treadmill/wifi.js, src/adapters/broadcast/bleno.js, src/app.js, test/unit/adapters/wifi.test.js, bleno.test.js
+- [X] T156 Incline totals (avg, max, climb) and incline chart in History: src/core/history/summarize.js, test/unit/core/history/summarize.test.js, app/history/*, app/core/prefs.service.ts
+- [X] T157 [US8] Custom programs (`programs:createCustom` / `programs:updateCustom`, week × weekday editor): src/core/programs/custom.js, src/storage/programsRepo.js, src/api/socket/programs.js, src/contracts/schemas/programs-custom.schema.json, app/programs/program-editor.component.ts, test/unit/core/customPrograms.test.js, test/integration/programs.test.js
+- [X] T158 Heart-rate zone colours (live lane, sparkline, tile, History chart) and time in zone per workout: app/core/prefs.service.ts, app/shared/live-chart.component.ts, spark.component.ts, app/history/*, styles/_tokens.scss, _screens.scss
+- [X] T159 Power zones from threshold power (tiles, live lane, History chart, time in power zone): app/core/prefs.service.ts, app/control/*, app/playback/*, app/shared/*, app/history/*
+- [X] T160 Dashboard: time in zone inside the heart-rate lane; incline row under the belt controls; incline trace over the speed lane: app/control/*, app/shared/live-chart.component.ts, styles/_screens.scss
+- [X] T161 Tablet layout and full screen (1600 px page, viewport-height lanes, safe areas, Fullscreen button, home-screen meta): src/index.html, app/shell/shell.component.ts, styles/_shell.scss, _screens.scss, _tokens.scss
+- [ ] T162 Owner: check the dashboard on the iPad (landscape and portrait, from the home screen) and power zones with a threshold set
+
 ---
 
 ## Dependencies & Execution Order

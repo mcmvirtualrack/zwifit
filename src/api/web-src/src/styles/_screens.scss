@@ -41,6 +41,14 @@
 	gap: 16px;
 }
 
+// Tablets: up to five tiles in one row, slightly tighter.
+@media (min-width: 641px) and (max-width: 1366px) {
+	.tiles {
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: 12px;
+	}
+}
+
 .tile {
 	display: flex;
 	flex-direction: column;
@@ -150,12 +158,13 @@
 
 .live__lane {
 	position: relative;
-	height: 100px;
+	height: clamp(84px, 13vh, 160px);
 	border-top: 1px solid var(--divider);
 }
 
 .live__lane--speed {
-	height: 230px;
+	// Scales with the screen's height so the dashboard fills a tablet without scrolling.
+	height: clamp(170px, 30vh, 360px);
 }
 
 .live__lane:first-child {
@@ -163,7 +172,7 @@
 }
 
 .live__lane--hr {
-	height: 150px;
+	height: clamp(120px, 18vh, 220px);
 }
 
 // Time in heart-rate zone, over the heart-rate lane (bottom left).
@@ -220,7 +229,7 @@
 }
 
 .live__lane--cadence {
-	height: 84px;
+	height: clamp(70px, 10vh, 130px);
 }
 
 .live__svg {
