@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { PrefsService, zoneOf, zoneStops } from '../core/prefs.service';
+import { POWER_ZONE_FLOORS, PrefsService, ZONE_FLOORS, zoneBands, zoneOf, zoneStops } from '../core/prefs.service';
 import { CHART_H, CHART_W, ChartSample, Metric, XAxis, nearestIndex, series, valueOf, xPositions } from './workout-charts';
 
 let nextId = 0;
@@ -29,7 +29,7 @@ const TITLES: Record<Metric, string> = { pace: 'Pace', hr: 'Heart rate', cadence
 					<div class="wchart__row">
 						<div class="wchart__label">
 							<span class="stat__label">{{ titles[c.metric] }}</span>
-							<span class="muted">{{ unit(c.metric) }}@if (c.metric === 'hr') { · by zone }</span>
+							<span class="muted">{{ unit(c.metric) }}@if (zoneData()[c.metric]) { · by zone }</span>
 						</div>
 						<div class="wchart__plot">
 							<span class="wchart__tick wchart__tick--top num">{{ format(c.metric, c.top) }}</span>
@@ -37,19 +37,19 @@ const TITLES: Record<Metric, string> = { pace: 'Pace', hr: 'Heart rate', cadence
 							<svg [attr.viewBox]="'0 0 ' + W + ' ' + H" preserveAspectRatio="none" aria-hidden="true">
 								<line class="wchart__grid" x1="0" [attr.x2]="W" y1="0.5" y2="0.5" vector-effect="non-scaling-stroke" />
 								<line class="wchart__grid" x1="0" [attr.x2]="W" [attr.y1]="H - 0.5" [attr.y2]="H - 0.5" vector-effect="non-scaling-stroke" />
-								@if (c.metric === 'hr') {
-									<!-- Heart rate coloured by zone: stops at the zone limits on this chart's scale. -->
+								@if (zoneData()[c.metric]; as z) {
+									<!-- Heart rate and power coloured by zone: stops at the zone limits on this chart's scale. -->
 									<defs>
-										<linearGradient [attr.id]="uid + 'hrzones'" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" [attr.y2]="H">
-											@for (st of hrStops(); track $index) { <stop [class]="'zstop zstop--' + st.zone" [attr.offset]="st.offset" /> }
+										<linearGradient [attr.id]="uid + c.metric + 'zones'" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" [attr.y2]="H">
+											@for (st of z.stops; track $index) { <stop [class]="'zstop zstop--' + st.zone" [attr.offset]="st.offset" /> }
 										</linearGradient>
 									</defs>
-									@for (band of hrBands(); track band.zone) {
+									@for (band of z.bands; track band.zone) {
 										<rect [class]="'live__zone live__zone--' + band.zone" x="0" [attr.width]="W" [attr.y]="band.y" [attr.height]="band.h" />
 									}
 								}
 								<path [class]="'wchart__line wchart__line--' + c.metric" [attr.d]="c.line" vector-effect="non-scaling-stroke"
-									[style.stroke]="c.metric === 'hr' ? 'url(#' + uid + 'hrzones)' : null" />
+									[style.stroke]="zoneData()[c.metric] ? 'url(#' + uid + c.metric + 'zones)' : null" />
 								@if (hoverX() !== null) {
 									<line class="wchart__cross" [attr.x1]="hoverX()" [attr.x2]="hoverX()" y1="0" [attr.y2]="H" vector-effect="non-scaling-stroke" />
 								}
@@ -93,18 +93,24 @@ export class WorkoutChartsComponent {
 		.filter(m => m !== 'incline' || this.tilted())
 		.map(m => series(this.samples(), this.xs(), m, this.metresPerUnit()))
 		.filter(c => c !== null));
-	private readonly hrChart = computed(() => this.charts().find(c => c.metric === 'hr') ?? null);
-	protected readonly hrStops = computed(() => {
-		const c = this.hrChart();
-		return c ? zoneStops(this.prefs.maxHr(), c.top, c.bottom) : [];
-	});
-	protected readonly hrBands = computed(() => {
-		const stops = this.hrStops();
-		const bands: { zone: number; y: number; h: number }[] = [];
-		for (let i = 0; i < stops.length; i += 2) {
-			bands.push({ zone: stops[i].zone, y: stops[i].offset * CHART_H, h: (stops[i + 1].offset - stops[i].offset) * CHART_H });
+	// Heart rate by zone of the maximum, power by zone of the threshold (when set).
+	private zoneRef(metric: Metric): { value: number; floors: number[] } | null {
+		if (metric === 'hr') {
+			return { value: this.prefs.maxHr(), floors: ZONE_FLOORS };
 		}
-		return bands;
+		const t = this.prefs.thresholdPower();
+		return metric === 'power' && t ? { value: t, floors: POWER_ZONE_FLOORS } : null;
+	}
+	protected readonly zoneData = computed(() => {
+		const out: Partial<Record<Metric, { stops: { offset: number; zone: number }[]; bands: { zone: number; y: number; h: number }[] }>> = {};
+		for (const c of this.charts()) {
+			const ref = this.zoneRef(c.metric);
+			if (ref) {
+				const stops = zoneStops(ref.value, c.top, c.bottom, ref.floors);
+				out[c.metric] = { stops, bands: zoneBands(stops, CHART_H) };
+			}
+		}
+		return out;
 	});
 	protected readonly hasCadence = computed(() => this.charts().some(c => c.metric === 'cadence'));
 	protected readonly hoverX = computed(() => {
@@ -132,7 +138,8 @@ export class WorkoutChartsComponent {
 		const start = Date.parse(this.samples()[0].t);
 		const values = this.charts().map(c => {
 			const v = valueOf(s, c.metric, this.metresPerUnit());
-			const zone = c.metric === 'hr' && v !== null ? ` · Z${zoneOf(v, this.prefs.maxHr())}` : '';
+			const ref = this.zoneRef(c.metric);
+			const zone = ref && v !== null ? ` · Z${zoneOf(v, ref.value, ref.floors)}` : '';
 			return { label: TITLES[c.metric], value: v === null ? '–' : `${this.format(c.metric, v)} ${this.unit(c.metric)}${zone}` };
 		});
 		return {

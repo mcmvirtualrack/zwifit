@@ -1,6 +1,6 @@
 import { Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
 import { HrHistoryService } from '../core/hr-history.service';
-import { PrefsService, zoneOf, zoneStops } from '../core/prefs.service';
+import { POWER_ZONE_FLOORS, PrefsService, timeInZones, zoneBands, zoneOf, zoneStops } from '../core/prefs.service';
 import { SocketService } from '../core/socket.service';
 import { displaySpeed } from '../core/units';
 import { LanePaths, axisLabels, ceilTo, lanePath, scaleFor } from './chart';
@@ -37,6 +37,13 @@ const average = (values: number[]) => (values.length ? Math.round(values.reduce(
 					@for (y of [14.3, 42.9, 71.4]; track y) { <line x1="0" x2="1000" [attr.y1]="y" [attr.y2]="y" vector-effect="non-scaling-stroke" /> }
 				</g>
 				<path [attr.d]="speed().paths.area" [attr.fill]="'url(#' + uid + 'speed)'" />
+				@if (inclineLane(); as inc) {
+					<!-- Incline as a step trace in the bottom third of the speed chart, on its own scale. -->
+					<g transform="translate(0 64) scale(1 0.36)">
+						<path class="live__incline-area" [attr.d]="inc.paths.area" />
+						<path class="live__line live__line--incline" [attr.d]="inc.paths.line" vector-effect="non-scaling-stroke" />
+					</g>
+				}
 				<path class="live__line live__line--speed" [attr.d]="speed().paths.line" vector-effect="non-scaling-stroke" />
 			</svg>
 			<div class="live__readout">
@@ -50,7 +57,12 @@ const average = (values: number[]) => (values.length ? Math.round(values.reduce(
 			@if (speed().paths.lastY !== null) {
 				<span class="live__tag live__tag--speed" [style.top.%]="speed().paths.lastY"><span class="live__tag-dot"></span><span class="live__tag-value num">{{ prefs.speed(kph()) }}</span></span>
 			}
-			<span class="live__scale">{{ prefs.speedLabel() }} · {{ speed().min }}–{{ speed().max }}</span>
+			@if (inclineLane(); as inc) {
+				@if (inc.paths.lastY !== null) {
+					<span class="live__tag live__tag--incline" [style.top.%]="64 + inc.paths.lastY * 0.36"><span class="live__tag-value num">{{ incline().toFixed(1) }}%</span></span>
+				}
+			}
+			<span class="live__scale">{{ prefs.speedLabel() }} · {{ speed().min }}–{{ speed().max }}@if (inclineLane(); as inc) { · <span class="live__scale-incline">incline {{ inc.min }}–{{ inc.max }} %</span>}</span>
 		</div>
 		}
 
@@ -61,15 +73,15 @@ const average = (values: number[]) => (values.length ? Math.round(values.reduce(
 						<linearGradient [attr.id]="uid + lane.kind" x1="0" y1="0" x2="0" y2="1">
 							<stop [class]="'live__stop-top live__stop-top--' + lane.kind" offset="0" /><stop [class]="'live__stop-bottom live__stop-bottom--' + lane.kind" offset="1" />
 						</linearGradient>
-						@if (lane.kind === 'hr') {
-							<!-- Colours the heart-rate line by zone: the stops sit at the zone limits on this lane's scale. -->
-							<linearGradient [attr.id]="uid + 'hrzones'" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="100">
-								@for (st of hrStops(lane); track $index) { <stop [class]="'zstop zstop--' + st.zone" [attr.offset]="st.offset" /> }
+						@if (laneStops(lane).length) {
+							<!-- Colours the heart-rate or power line by zone: the stops sit at the zone limits on this lane's scale. -->
+							<linearGradient [attr.id]="uid + lane.kind + 'zones'" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="100">
+								@for (st of laneStops(lane); track $index) { <stop [class]="'zstop zstop--' + st.zone" [attr.offset]="st.offset" /> }
 							</linearGradient>
 						}
 					</defs>
-					@if (lane.kind === 'hr') {
-						@for (band of zoneBands(lane); track band.zone) {
+					@if (laneStops(lane).length) {
+						@for (band of laneBands(lane); track band.zone) {
 							<rect [class]="'live__zone live__zone--' + band.zone" x="0" width="1000" [attr.y]="band.y" [attr.height]="band.h" />
 						}
 					}
@@ -80,9 +92,9 @@ const average = (values: number[]) => (values.length ? Math.round(values.reduce(
 					@if (lane.kind === 'power' && thresholdY(lane); as ty) {
 						<line class="live__threshold" x1="0" x2="1000" [attr.y1]="ty" [attr.y2]="ty" vector-effect="non-scaling-stroke" />
 					}
-					@if (lane.kind === 'speed' || lane.kind === 'power') { <path [attr.d]="lane.paths.area" [attr.fill]="'url(#' + uid + lane.kind + ')'" /> }
+					@if (lane.kind === 'power' && !laneStops(lane).length) { <path [attr.d]="lane.paths.area" [attr.fill]="'url(#' + uid + lane.kind + ')'" /> }
 					<path [class]="'live__line live__line--' + lane.kind" [attr.d]="lane.paths.line" vector-effect="non-scaling-stroke"
-						[style.stroke]="lane.kind === 'hr' ? 'url(#' + uid + 'hrzones)' : null" />
+						[style.stroke]="laneStops(lane).length ? 'url(#' + uid + lane.kind + 'zones)' : null" />
 				</svg>
 				<div class="live__badge">
 					@switch (lane.kind) {
@@ -98,12 +110,25 @@ const average = (values: number[]) => (values.length ? Math.round(values.reduce(
 						@case ('power') {
 							<svg class="live__icon live__icon--power" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z" /></svg>
 							<span class="live__badge-value num">{{ power() ?? '–' }}</span>
-							<span class="live__badge-text">W running power@if (power() && prefs.thresholdPower(); as t) { · {{ pct(power()!, t) }}% of {{ t }} W threshold }@else if (avg().power) { · avg {{ avg().power }}}</span>
+							<span class="live__badge-text">W running power@if (power() && prefs.thresholdPower(); as t) { · <span [class]="'zone-text zone-text--' + powerZone()">Zone {{ powerZone() }}</span> · {{ pct(power()!, t) }}% of {{ t }} W threshold }@else if (avg().power) { · avg {{ avg().power }}}</span>
 						}
 					}
 				</div>
+				@if (lane.kind === 'hr' && hrZoneTime(); as zt) {
+					<!-- Time in each heart-rate zone over the chart's window, as a stacked bar and times. -->
+					<div class="live__zones" role="img" [attr.aria-label]="zoneTimeText(zt)">
+						<span class="live__zones-bar" aria-hidden="true">
+							@for (z of zt; track z.zone) { @if (z.percent) { <span [class]="'live__zones-seg zones__fill--Z' + z.zone" [style.width.%]="z.percent"></span> } }
+						</span>
+						<span class="live__zones-list" aria-hidden="true">
+							@for (z of zt; track z.zone) {
+								<span class="live__zones-item num" [class.live__zones-item--off]="!z.seconds"><span [class]="'live__zones-dot zones__fill--Z' + z.zone"></span>Z{{ z.zone }} {{ prefs.duration(z.seconds) }}</span>
+							}
+						</span>
+					</div>
+				}
 				@if (lane.paths.lastY !== null) {
-					<span [class]="'live__tag live__tag--' + lane.kind + (lane.kind === 'hr' && lane.paths.last ? ' live__tag--z' + zoneFor(lane.paths.last) : '')" [style.top.%]="lane.paths.lastY"><span class="live__tag-dot"></span><span class="live__tag-value num">{{ lane.paths.last }}</span></span>
+					<span [class]="'live__tag live__tag--' + lane.kind + (lane.paths.last && zoneFor(lane, lane.paths.last) ? ' live__tag--z' + zoneFor(lane, lane.paths.last) : '')" [style.top.%]="lane.paths.lastY"><span class="live__tag-dot"></span><span class="live__tag-value num">{{ lane.paths.last }}</span></span>
 				}
 				<span class="live__scale">{{ scaleText(lane) }}</span>
 			</div>
@@ -137,6 +162,16 @@ export class LiveChartComponent {
 	protected readonly cadence = computed(() => this.treadmill()?.cadence || null);
 	protected readonly power = computed(() => this.treadmill()?.power || null);
 	protected readonly zone = computed(() => (this.hr() ? zoneOf(this.hr()!, this.prefs.maxHr()) : null));
+	// Seconds in each heart-rate zone over the window; null before any heart rate.
+	protected readonly hrZoneTime = computed(() => {
+		const seconds = timeInZones(this.inRange().map(s => ({ t: s.t, v: s.bpm })), this.prefs.maxHr());
+		const total = seconds.reduce((a, b) => a + b, 0);
+		return total ? seconds.map((sec, i) => ({ zone: i + 1, seconds: Math.round(sec), percent: (sec / total) * 100 })) : null;
+	});
+	protected readonly powerZone = computed(() => {
+		const t = this.prefs.thresholdPower();
+		return this.power() && t ? zoneOf(this.power()!, t, POWER_ZONE_FLOORS) : null;
+	});
 
 	private readonly range = computed(() => {
 		const end = this.now();
@@ -150,7 +185,7 @@ export class LiveChartComponent {
 		return this.history.samples().filter(s => s.t >= start);
 	});
 
-	private series(pick: (s: { bpm: number | null; w?: number | null; kph?: number | null; c?: number | null }) => number | null | undefined): TracePoint[] {
+	private series(pick: (s: { bpm: number | null; w?: number | null; kph?: number | null; c?: number | null; inc?: number | null }) => number | null | undefined): TracePoint[] {
 		return this.inRange().map(s => ({ t: s.t, v: pick(s) ?? null }));
 	}
 
@@ -160,6 +195,20 @@ export class LiveChartComponent {
 		const top = Math.max(metric ? 14 : 9, ceilTo(Math.max(0, ...points.map(p => p.v ?? 0)) + 1, 2));
 		const { start, end } = this.range();
 		return { kind: 'speed', paths: lanePath(points, start, end, 0, top), min: 0, max: top };
+	});
+
+	protected readonly incline = computed(() => (this.treadmill()?.connected ? this.treadmill()!.incline ?? 0 : 0));
+	// Incline over the window, shown once the belt has been tilted in it (or is tilted now).
+	protected readonly inclineLane = computed(() => {
+		const points = this.series(s => s.inc);
+		const values = points.map(p => p.v).filter((v): v is number => v !== null);
+		if (!values.some(v => v !== 0) && !this.incline()) {
+			return null;
+		}
+		const min = Math.min(0, ...values);
+		const max = Math.max(6, ceilTo(Math.max(0, ...values) + 1, 2));
+		const { start, end } = this.range();
+		return { paths: lanePath(points, start, end, min, max, { step: true }), min, max };
 	});
 
 	protected readonly lanes = computed<Lane[]>(() => {
@@ -219,27 +268,35 @@ export class LiveChartComponent {
 		switch (lane.kind) {
 			case 'hr': return `bpm · ${lane.min}–${lane.max} · coloured by zone`;
 			case 'cadence': return `spm · ${lane.min}–${lane.max}`;
-			case 'power': return `W · ${lane.min}–${lane.max}${this.prefs.thresholdPower() ? ' · dashed = threshold' : ''}`;
+			case 'power': return `W · ${lane.min}–${lane.max}${this.prefs.thresholdPower() ? ' · coloured by zone · dashed = threshold' : ''}`;
 			default: return '';
 		}
 	}
 
-	// Each zone faintly shaded in its colour, clipped to the lane's scale.
-	protected zoneBands(lane: Lane): { zone: number; y: number; h: number }[] {
-		const stops = this.hrStops(lane);
-		const bands: { zone: number; y: number; h: number }[] = [];
-		for (let i = 0; i < stops.length; i += 2) {
-			bands.push({ zone: stops[i].zone, y: stops[i].offset * 100, h: (stops[i + 1].offset - stops[i].offset) * 100 });
+	// Heart rate by zone of the maximum; power by zone of the threshold (when one is set).
+	protected laneStops(lane: Lane): { offset: number; zone: number }[] {
+		if (lane.kind === 'hr') {
+			return zoneStops(this.prefs.maxHr(), lane.max, lane.min);
 		}
-		return bands;
+		const t = this.prefs.thresholdPower();
+		return lane.kind === 'power' && t ? zoneStops(t, lane.max, lane.min, POWER_ZONE_FLOORS) : [];
 	}
 
-	protected hrStops(lane: Lane): { offset: number; zone: number }[] {
-		return zoneStops(this.prefs.maxHr(), lane.max, lane.min);
+	// Each zone faintly shaded in its colour, clipped to the lane's scale.
+	protected laneBands(lane: Lane): { zone: number; y: number; h: number }[] {
+		return zoneBands(this.laneStops(lane), 100);
 	}
 
-	protected zoneFor(bpm: number): number {
-		return zoneOf(bpm, this.prefs.maxHr());
+	protected zoneFor(lane: Lane, value: number): number | null {
+		if (lane.kind === 'hr') {
+			return zoneOf(value, this.prefs.maxHr());
+		}
+		const t = this.prefs.thresholdPower();
+		return lane.kind === 'power' && t ? zoneOf(value, t, POWER_ZONE_FLOORS) : null;
+	}
+
+	protected zoneTimeText(zones: { zone: number; seconds: number }[]): string {
+		return `Time in heart-rate zone over the ${this.windowText()}: ${zones.map(z => `zone ${z.zone} ${this.prefs.duration(z.seconds)}`).join(', ')}`;
 	}
 
 	protected thresholdY(lane: Lane): number | null {

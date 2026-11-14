@@ -164,8 +164,8 @@
 			</section>
 			<section class="tile tile--hr" aria-label="Heart rate">
 				<span class="eyebrow">Heart rate</span>
-				<span class="tile__reading"><span class="tile__value num">{{ treadmill()?.hr ? round(treadmill()!.hr!) : '–' }}</span>@if (treadmill()?.hr) {<span class="tile__unit">bpm</span>}</span>
-				<span class="tile__sub">@if (zone(); as z) {Zone {{ z }}}@if (stepAvg().hr; as a) { · step avg {{ a }}}@if (!treadmill()?.hr) {not available}</span>
+				<span class="tile__reading"><span [class]="'tile__value num' + (zone() ? ' tile__value--z' + zone() : '')">{{ treadmill()?.hr ? round(treadmill()!.hr!) : '–' }}</span>@if (treadmill()?.hr) {<span class="tile__unit">bpm</span>}</span>
+				<span class="tile__sub">@if (zone(); as z) {<span [class]="'zone-text zone-text--' + z">Zone {{ z }}</span>}@if (stepAvg().hr; as a) { · step avg {{ a }}}@if (!treadmill()?.hr) {not available}</span>
 			</section>
 			@if (treadmill()?.cadence || stepAvg().cadence) {
 				<section class="tile tile--cadence" aria-label="Cadence">
@@ -184,8 +184,8 @@
 			@if (treadmill()?.power || stepAvg().power) {
 				<section class="tile tile--power" aria-label="Power">
 					<span class="eyebrow">Power</span>
-					<span class="tile__reading"><span class="tile__value num">{{ treadmill()?.power || '–' }}</span><span class="tile__unit">W</span></span>
-					<span class="tile__sub">@if (stepAvg().power; as a) {step avg {{ a }}}@if (prefs.thresholdPower() && stepAvg().power; as a) { · {{ round(stepAvg().power! / prefs.thresholdPower()! * 100) }}% threshold}</span>
+					<span class="tile__reading"><span [class]="'tile__value num' + (powerZone() ? ' tile__value--z' + powerZone() : '')">{{ treadmill()?.power || '–' }}</span><span class="tile__unit">W</span></span>
+					<span class="tile__sub">@if (powerZone(); as z) {<span [class]="'zone-text zone-text--' + z">Zone {{ z }} {{ powerNames[z - 1] }}</span> · }@if (stepAvg().power; as a) {step avg {{ a }}}@if (prefs.thresholdPower() && stepAvg().power; as a) { · {{ round(stepAvg().power! / prefs.thresholdPower()! * 100) }}% threshold}</span>
 				</section>
 			}
 		</div>

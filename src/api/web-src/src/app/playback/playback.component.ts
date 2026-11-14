@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { SensorSource } from '../core/api.types';
 import { HrHistoryService } from '../core/hr-history.service';
 import { PlanProfileService } from '../core/plan-profile.service';
-import { PrefsService, zoneOf } from '../core/prefs.service';
+import { POWER_ZONE_FLOORS, POWER_ZONE_NAMES, PrefsService, zoneOf } from '../core/prefs.service';
 import { SocketService } from '../core/socket.service';
 import { ToastService } from '../core/toast.service';
 import { END_REASONS } from '../core/units';
@@ -90,6 +90,12 @@ export class PlaybackComponent {
 		return !!t?.connected && Math.abs(t.kph - this.targetKph()) <= ON_TARGET_KPH;
 	});
 
+	protected readonly powerNames = POWER_ZONE_NAMES;
+	protected readonly powerZone = computed(() => {
+		const w = this.treadmill()?.power;
+		const t = this.prefs.thresholdPower();
+		return w && t ? zoneOf(w, t, POWER_ZONE_FLOORS) : null;
+	});
 	protected readonly zone = computed(() => {
 		const hr = this.treadmill()?.hr;
 		return hr ? zoneOf(hr, this.prefs.maxHr()) : null;

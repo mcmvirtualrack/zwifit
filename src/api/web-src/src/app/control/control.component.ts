@@ -3,11 +3,10 @@ import { RouterLink } from '@angular/router';
 import { SensorSource } from '../core/api.types';
 import { HrHistoryService, HrSample } from '../core/hr-history.service';
 import { PlanProfileService } from '../core/plan-profile.service';
-import { PrefsService, timeInZones } from '../core/prefs.service';
+import { POWER_ZONE_FLOORS, POWER_ZONE_NAMES, PrefsService, zoneOf } from '../core/prefs.service';
 import { SocketService } from '../core/socket.service';
 import { ToastService } from '../core/toast.service';
 import { displaySpeed, fromDisplaySpeed } from '../core/units';
-import { ceilTo, lanePath } from '../shared/chart';
 import { LiveChartComponent } from '../shared/live-chart.component';
 import { SparkComponent } from '../shared/spark.component';
 
@@ -16,8 +15,6 @@ const INCLINE_STEP = 0.5;
 const ACTIVE = ['waiting', 'running', 'paused', 'resuming'];
 const SPARK_MS = 2 * 60 * 1000;
 const WINDOWS = { short: 2 * 60 * 1000, long: 10 * 60 * 1000 };
-// A gap longer than this between samples is not counted as time in a zone.
-const MAX_GAP_S = 5;
 
 type Window = 'short' | 'long' | 'workout';
 
@@ -35,7 +32,7 @@ export class ControlComponent {
 	private readonly history = inject(HrHistoryService);
 	private readonly profile = inject(PlanProfileService);
 
-	// What the live chart, zones and incline chart cover.
+	// What the live chart covers.
 	protected readonly window = signal<Window>('long');
 	protected readonly windowMs = computed(() => WINDOWS[this.window() === 'short' ? 'short' : 'long']);
 	protected readonly windowTitle = computed(() => (this.window() === 'workout' && this.planActive() ? 'workout' : this.window() === 'short' ? 'last 2 min' : 'last 10 min'));
@@ -45,6 +42,19 @@ export class ControlComponent {
 		const samples = this.history.samples();
 		const from = this.window() === 'workout' && this.planActive() ? this.workoutStart() : Date.now() - this.windowMs();
 		return samples.filter(s => s.t >= from);
+	});
+
+	protected readonly powerFloors = POWER_ZONE_FLOORS;
+	protected readonly powerNames = POWER_ZONE_NAMES;
+	// The zone of the current reading: heart rate from the maximum, power from the threshold (if set).
+	protected readonly hrZone = computed(() => {
+		const hr = this.treadmill()?.hr;
+		return hr ? zoneOf(hr, this.prefs.maxHr()) : null;
+	});
+	protected readonly powerZone = computed(() => {
+		const w = this.treadmill()?.power;
+		const t = this.prefs.thresholdPower();
+		return w && t ? zoneOf(w, t, POWER_ZONE_FLOORS) : null;
 	});
 
 	protected readonly sparks = computed(() => {
@@ -61,24 +71,6 @@ export class ControlComponent {
 	protected readonly avgOf = computed(() => {
 		const of = (pick: (s: HrSample) => number | null | undefined) => average(this.windowSamples().map(pick).filter((v): v is number => typeof v === 'number' && v > 0));
 		return { cadence: of(s => s.c), power: of(s => s.w) };
-	});
-
-	// Time in each heart-rate zone over the window.
-	protected readonly zones = computed(() => {
-		const samples = this.windowSamples();
-		const max = this.prefs.maxHr();
-		const seconds = timeInZones(samples, max, MAX_GAP_S);
-		const total = seconds.reduce((a, b) => a + b, 0) || 1;
-		return seconds.map((s, i) => ({ name: `Z${i + 1}`, seconds: Math.round(s), percent: Math.round((s / total) * 100) }));
-	});
-
-	protected readonly inclinePath = computed(() => {
-		const samples = this.windowSamples();
-		const points = samples.map(s => ({ t: s.t, v: s.inc ?? null }));
-		const top = Math.max(6, ceilTo(Math.max(0, ...points.map(p => p.v ?? 0)) + 1, 2));
-		const end = Date.now();
-		const start = this.window() === 'workout' && this.planActive() ? this.workoutStart() : end - this.windowMs();
-		return lanePath(points, start, end, Math.min(0, ...points.map(p => p.v ?? 0)), top, { step: true });
 	});
 
 	// The status pills under the header.

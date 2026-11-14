@@ -163,7 +163,60 @@
 }
 
 .live__lane--hr {
-	height: 120px;
+	height: 150px;
+}
+
+// Time in heart-rate zone, over the heart-rate lane (bottom left).
+.live__zones {
+	position: absolute;
+	left: 20px;
+	bottom: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	padding: 6px 10px;
+	border-radius: 8px;
+	background: var(--glass);
+	pointer-events: none;
+}
+
+.live__zones-bar {
+	display: flex;
+	width: 100%;
+	height: 5px;
+	border-radius: 3px;
+	overflow: hidden;
+	background: var(--track);
+}
+
+.live__zones-seg {
+	display: block;
+	height: 100%;
+}
+
+.live__zones-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+}
+
+.live__zones-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--text-soft);
+}
+
+.live__zones-item--off {
+	opacity: 0.45;
+}
+
+.live__zones-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
 }
 
 .live__lane--cadence {
@@ -191,6 +244,20 @@
 
 .live__line--speed {
 	stroke: var(--accent);
+}
+
+.live__line--incline {
+	stroke: var(--incline);
+	stroke-width: 1.25;
+}
+
+.live__incline-area {
+	fill: var(--incline);
+	fill-opacity: 0.1;
+}
+
+.live__scale-incline {
+	color: var(--incline);
 }
 
 .live__line--hr {
@@ -249,6 +316,10 @@
 
 	.zones__fill--Z#{$z} {
 		background: var(--z#{$z});
+	}
+
+	.tile .tile__value.tile__value--z#{$z} {
+		color: var(--z#{$z});
 	}
 }
 
@@ -378,6 +449,13 @@
 	--tag-ink: var(--hr-contrast);
 }
 
+// Incline's latest value, left of the speed tag so the two never sit on top of each other.
+.live__tag--incline {
+	--tag: var(--incline);
+	--tag-ink: var(--z-contrast);
+	right: 72px;
+}
+
 @for $z from 1 through 5 {
 	.live__tag--z#{$z} {
 		--tag: var(--z#{$z});
@@ -486,6 +564,37 @@
 	align-items: center;
 	gap: 8px;
 	flex: 2 1 480px;
+}
+
+// The slim incline row under the belt and speed controls.
+.controls__incline {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	flex: 1 1 100%;
+	padding-top: 10px;
+	border-top: 1px solid var(--divider);
+}
+
+.controls__incline-label {
+	min-width: 104px;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.controls__incline-value {
+	font-size: 16px;
+	letter-spacing: 0;
+	color: var(--incline);
+}
+
+.btn--round.btn--round-sm {
+	width: 44px;
+	height: 44px;
 }
 
 .btn--round {

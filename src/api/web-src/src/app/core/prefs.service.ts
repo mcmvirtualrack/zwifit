@@ -12,40 +12,45 @@ export const DEFAULT_MAX_HR = 190;
 
 // Heart-rate zones as shares of the maximum: Z1 below 60 %, Z2 60–70, Z3 70–80, Z4 80–90, Z5 from 90.
 export const ZONE_FLOORS = [0, 0.6, 0.7, 0.8, 0.9];
+// Running power zones as shares of threshold power (Stryd's five zones): Z1 easy below 80 %,
+// Z2 moderate 80–90, Z3 threshold 90–100, Z4 interval 100–115, Z5 repetition from 115.
+export const POWER_ZONE_FLOORS = [0, 0.8, 0.9, 1, 1.15];
+export const POWER_ZONE_NAMES = ['Easy', 'Moderate', 'Threshold', 'Interval', 'Repetition'];
 
-export function zoneOf(bpm: number, maxHr: number): number {
+// Zone 1–5 of a reading, given the reference (maximum heart rate, threshold power) and floors.
+export function zoneOf(value: number, reference: number, floors: number[] = ZONE_FLOORS): number {
 	let zone = 1;
-	ZONE_FLOORS.forEach((floor, i) => {
-		if (bpm >= floor * maxHr) {
+	floors.forEach((floor, i) => {
+		if (value >= floor * reference) {
 			zone = i + 1;
 		}
 	});
 	return zone;
 }
 
-// Seconds in each zone (index 0 = Z1). A sample's heart rate counts until the next sample; gaps
-// longer than maxGapS (a pause, a dropped sensor) count only maxGapS.
-export function timeInZones(points: { t: number; bpm: number | null | undefined }[], maxHr: number, maxGapS = 5): number[] {
+// Seconds in each zone (index 0 = Z1). A reading counts until the next one; gaps longer than
+// maxGapS (a pause, a dropped sensor) count only maxGapS.
+export function timeInZones(points: { t: number; v: number | null | undefined }[], reference: number, floors: number[] = ZONE_FLOORS, maxGapS = 5): number[] {
 	const seconds = [0, 0, 0, 0, 0];
 	for (let i = 0; i < points.length - 1; i++) {
-		const bpm = points[i].bpm;
-		if (bpm && bpm > 0) {
-			seconds[zoneOf(bpm, maxHr) - 1] += Math.max(0, Math.min(maxGapS, (points[i + 1].t - points[i].t) / 1000));
+		const v = points[i].v;
+		if (v && v > 0) {
+			seconds[zoneOf(v, reference, floors) - 1] += Math.max(0, Math.min(maxGapS, (points[i + 1].t - points[i].t) / 1000));
 		}
 	}
 	return seconds;
 }
 
-// Gradient stops that colour a heart-rate line by zone: on a chart whose top edge is `top` bpm and
-// bottom edge `bottom` bpm, each zone's colour runs between that zone's limits (offsets 0..1 from
-// the top). Used with a userSpaceOnUse gradient spanning the chart's height.
-export function zoneStops(maxHr: number, top: number, bottom: number): { offset: number; zone: number }[] {
+// Gradient stops that colour a line by zone: on a chart whose top edge is `top` and bottom edge
+// `bottom` (in the reading's units), each zone's colour runs between that zone's limits (offsets
+// 0..1 from the top). Used with a userSpaceOnUse gradient spanning the chart's height.
+export function zoneStops(reference: number, top: number, bottom: number, floors: number[] = ZONE_FLOORS): { offset: number; zone: number }[] {
 	const span = top - bottom || 1;
-	const at = (bpm: number) => Math.min(1, Math.max(0, (top - bpm) / span));
+	const at = (v: number) => Math.min(1, Math.max(0, (top - v) / span));
 	const stops: { offset: number; zone: number }[] = [];
 	for (let zone = 5; zone >= 1; zone--) {
-		const upper = zone === 5 ? Infinity : ZONE_FLOORS[zone] * maxHr;
-		const lower = zone === 1 ? -Infinity : ZONE_FLOORS[zone - 1] * maxHr;
+		const upper = zone === 5 ? Infinity : floors[zone] * reference;
+		const lower = zone === 1 ? -Infinity : floors[zone - 1] * reference;
 		const from = at(upper);
 		const to = at(lower);
 		if (to > from) {
@@ -53,6 +58,15 @@ export function zoneStops(maxHr: number, top: number, bottom: number): { offset:
 		}
 	}
 	return stops;
+}
+
+// The bands between pairs of stops, as y and height on a chart `height` tall.
+export function zoneBands(stops: { offset: number; zone: number }[], height: number): { zone: number; y: number; h: number }[] {
+	const bands: { zone: number; y: number; h: number }[] = [];
+	for (let i = 0; i < stops.length; i += 2) {
+		bands.push({ zone: stops[i].zone, y: stops[i].offset * height, h: (stops[i + 1].offset - stops[i].offset) * height });
+	}
+	return bands;
 }
 
 // Display units, threshold power and weight come from the server settings; the theme and maximum

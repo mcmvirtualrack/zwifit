@@ -40,9 +40,9 @@
 	@if (seen().hr) {
 		<section class="tile tile--hr" aria-label="Heart rate">
 			<span class="eyebrow">Heart rate</span>
-			<span class="tile__reading"><span class="tile__value num">{{ hr() }}</span> @if (treadmill()?.hr) {<span class="tile__unit">bpm</span>}</span>
-			<app-spark [values]="sparks().hr" kind="hr" />
-			<span class="tile__sub">{{ treadmill()?.hr ? sourceLabel(treadmill()?.hrSource) : 'signal lost' }}@if (maxOf().hr; as m) { · max {{ m }}}</span>
+			<span class="tile__reading"><span [class]="'tile__value num' + (hrZone() ? ' tile__value--z' + hrZone() : '')">{{ hr() }}</span> @if (treadmill()?.hr) {<span class="tile__unit">bpm</span>}</span>
+			<app-spark [values]="sparks().hr" kind="hr" [zoneRef]="prefs.maxHr()" />
+			<span class="tile__sub">@if (hrZone(); as z) {<span [class]="'zone-text zone-text--' + z">Zone {{ z }}</span> · }{{ treadmill()?.hr ? sourceLabel(treadmill()?.hrSource) : 'signal lost' }}@if (maxOf().hr; as m) { · max {{ m }}}</span>
 		</section>
 	}
 	@if (seen().cadence) {
@@ -56,9 +56,9 @@
 	@if (seen().power) {
 		<section class="tile tile--power" aria-label="Power">
 			<span class="eyebrow">Power</span>
-			<span class="tile__reading"><span class="tile__value num">{{ treadmill()?.power || '–' }}</span> @if (treadmill()?.power) {<span class="tile__unit">W</span>}</span>
-			<app-spark [values]="sparks().power" kind="power" />
-			<span class="tile__sub">{{ treadmill()?.power ? sourceLabel(treadmill()?.powerSource) : 'signal lost' }}@if (avgOf().power; as a) { · avg {{ a }}}@if (treadmill()?.power && prefs.weightKg(); as kg) { · {{ (treadmill()!.power! / kg).toFixed(1) }} W/kg}</span>
+			<span class="tile__reading"><span [class]="'tile__value num' + (powerZone() ? ' tile__value--z' + powerZone() : '')">{{ treadmill()?.power || '–' }}</span> @if (treadmill()?.power) {<span class="tile__unit">W</span>}</span>
+			<app-spark [values]="sparks().power" kind="power" [zoneRef]="prefs.thresholdPower()" [zoneFloors]="powerFloors" />
+			<span class="tile__sub">@if (powerZone(); as z) {<span [class]="'zone-text zone-text--' + z">Zone {{ z }} {{ powerNames[z - 1] }}</span> · }{{ treadmill()?.power ? sourceLabel(treadmill()?.powerSource) : 'signal lost' }}@if (avgOf().power; as a) { · avg {{ a }}}@if (treadmill()?.power && prefs.weightKg(); as kg) { · {{ (treadmill()!.power! / kg).toFixed(1) }} W/kg}</span>
 		</section>
 	}
 </div>
@@ -126,6 +126,18 @@
 				}
 			</div>
 		</div>
+		<!-- Incline: a slim row; its trace is drawn over the speed chart above. -->
+		<div class="controls__incline" role="group" aria-label="Incline">
+			<span class="controls__incline-label">Incline <span class="controls__incline-value num">{{ incline().toFixed(1) }}</span>%</span>
+			<button class="btn btn--round btn--round-sm" type="button" (click)="stepIncline(-1)" [disabled]="!canIncline(-1)" aria-label="Less incline">−</button>
+			<button class="btn btn--round btn--round-sm" type="button" (click)="stepIncline(1)" [disabled]="!canIncline(1)" aria-label="More incline">+</button>
+			<div class="presets" role="group" aria-label="Incline presets">
+				@for (preset of inclinePresets; track preset) {
+					<button class="chip chip--sm" type="button" (click)="presetIncline(preset)" [attr.aria-pressed]="incline() === preset"
+						[disabled]="!canControl() || preset > limits().maxIncline || preset < limits().minIncline">{{ preset }}%</button>
+				}
+			</div>
+		</div>
 	</div>
 	@if (freeRunActive()) {
 		<p class="field__hint" aria-live="polite">
@@ -140,42 +152,3 @@
 	}
 	<span class="field__hint">Limits {{ prefs.speed(limits().minKph) }}–{{ prefs.speed(limits().maxKph) }} {{ prefs.speedLabel() }}</span>
 </section>
-
-<div class="dash-pair">
-	<section class="card incline-card" aria-labelledby="incline-label">
-		<div class="incline-card__head">
-			<h2 class="card__title incline-card__title" id="incline-label">Incline</h2>
-			<span class="incline-card__value num">{{ incline().toFixed(1) }}</span><span class="tile__unit">%</span>
-		</div>
-		<div class="incline-card__chart">
-			<svg viewBox="0 0 1000 100" preserveAspectRatio="none" role="img" [attr.aria-label]="'Incline over the ' + windowTitle()">
-				<path class="incline-card__area" [attr.d]="inclinePath().area" />
-				<path class="incline-card__line" [attr.d]="inclinePath().line" vector-effect="non-scaling-stroke" />
-			</svg>
-		</div>
-		<div class="controls__speed">
-			<button class="btn btn--round" type="button" (click)="stepIncline(-1)" [disabled]="!canIncline(-1)" aria-label="Less incline">−</button>
-			<button class="btn btn--round" type="button" (click)="stepIncline(1)" [disabled]="!canIncline(1)" aria-label="More incline">+</button>
-			<div class="presets" role="group" aria-label="Incline presets">
-				@for (preset of inclinePresets; track preset) {
-					<button class="chip chip--sm" type="button" (click)="presetIncline(preset)" [attr.aria-pressed]="incline() === preset"
-						[disabled]="!canControl() || preset > limits().maxIncline || preset < limits().minIncline">{{ preset }}%</button>
-				}
-			</div>
-		</div>
-	</section>
-
-	@if (seen().hr) {
-		<section class="card zones" aria-labelledby="zones-title">
-			<h2 class="card__title" id="zones-title">Time in heart-rate zone</h2>
-			@for (z of zones(); track z.name) {
-				<div class="zones__row">
-					<span class="zones__name num">{{ z.name }}</span>
-					<span class="zones__track"><span class="zones__fill" [class]="'zones__fill zones__fill--' + z.name" [style.width.%]="z.percent"></span></span>
-					<span class="zones__time num">{{ prefs.duration(z.seconds) }}</span>
-				</div>
-			}
-			<p class="field__hint">Over the {{ windowTitle() }}, from a maximum heart rate of {{ prefs.maxHr() }} bpm (change it in Settings → Display).</p>
-		</section>
-	}
-</div>

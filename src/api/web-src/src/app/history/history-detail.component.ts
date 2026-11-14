@@ -2,13 +2,20 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Workout } from '../core/api.types';
-import { PrefsService, ZONE_FLOORS, timeInZones } from '../core/prefs.service';
+import { POWER_ZONE_FLOORS, POWER_ZONE_NAMES, PrefsService, ZONE_FLOORS, timeInZones } from '../core/prefs.service';
 import { SocketService } from '../core/socket.service';
 import { ToastService } from '../core/toast.service';
 import { END_REASONS } from '../core/units';
 import { StatTileComponent } from '../shared/stat-tile.component';
 import { ChartSample } from './workout-charts';
 import { WorkoutChartsComponent } from './workout-charts.component';
+
+// "Z1 below 114, Z2 114–132, …, Z5 171+" for a reference and zone floors.
+function limitsText(reference: number, floors: number[], names?: string[]): string {
+	const at = floors.map(f => Math.ceil(f * reference));
+	const label = (i: number) => `Z${i + 1}${names ? ` ${names[i].toLowerCase()}` : ''}`;
+	return at.map((low, i) => (i === 0 ? `${label(i)} below ${at[1]}` : i === at.length - 1 ? `${label(i)} ${low}+` : `${label(i)} ${low}–${at[i + 1] - 1}`)).join(', ');
+}
 
 @Component({
 	selector: 'app-history-detail',
@@ -42,7 +49,7 @@ import { WorkoutChartsComponent } from './workout-charts.component';
 					<app-stat-tile label="Avg power" [value]="'' + w.totals.avgPower" unit="W" [sub]="'max ' + w.totals.maxPower + ' W'" variant="power" />
 				}
 			</div>
-			@if (zones(); as z) {
+			@if (hrZones(); as z) {
 				<section class="card zones" aria-labelledby="zones-title">
 					<h2 class="card__title" id="zones-title">Time in heart-rate zone</h2>
 					@for (row of z; track row.name) {
@@ -53,7 +60,21 @@ import { WorkoutChartsComponent } from './workout-charts.component';
 							<span class="zones__pct num muted">{{ row.percent }}%</span>
 						</div>
 					}
-					<p class="field__hint">From a maximum heart rate of {{ prefs.maxHr() }} bpm (change it in Settings → Display): Z1 below {{ limits()[0] }}, Z2 {{ limits()[0] }}–{{ limits()[1] - 1 }}, Z3 {{ limits()[1] }}–{{ limits()[2] - 1 }}, Z4 {{ limits()[2] }}–{{ limits()[3] - 1 }}, Z5 {{ limits()[3] }}+ bpm.</p>
+					<p class="field__hint">From a maximum heart rate of {{ prefs.maxHr() }} bpm (change it in Settings → Display): {{ hrLimits() }} bpm.</p>
+				</section>
+			}
+			@if (powerZones(); as z) {
+				<section class="card zones" aria-labelledby="power-zones-title">
+					<h2 class="card__title" id="power-zones-title">Time in power zone</h2>
+					@for (row of z; track row.name) {
+						<div class="zones__row" [title]="row.label">
+							<span class="zones__name num">{{ row.name }}</span>
+							<span class="zones__track"><span [class]="'zones__fill zones__fill--' + row.name" [style.width.%]="row.percent"></span></span>
+							<span class="zones__time num">{{ prefs.duration(row.seconds) }}</span>
+							<span class="zones__pct num muted">{{ row.percent }}%</span>
+						</div>
+					}
+					<p class="field__hint">From a threshold power of {{ prefs.thresholdPower() }} W (change it in Settings → Sensors): {{ powerLimits() }} W.</p>
 				</section>
 			}
 			<!-- A free run (no plan) has no targets, so no steps table: the tiles and charts say it all. -->
@@ -109,17 +130,24 @@ export class HistoryDetailComponent implements OnInit {
 	protected readonly workout = signal<Workout | null>(null);
 	protected readonly samples = signal<ChartSample[]>([]);
 	protected readonly hasTargets = computed(() => !!this.workout()?.steps.some(s => s.target.kph !== null));
-	// Time in each heart-rate zone over the whole workout; null when no heart rate was recorded.
-	protected readonly zones = computed(() => {
-		const points = this.samples().map(s => ({ t: Date.parse(s.t), bpm: s.hr }));
-		const seconds = timeInZones(points, this.prefs.maxHr());
+	// Time in each heart-rate zone and power zone over the whole workout; null when not recorded
+	// (power zones also need a threshold power).
+	protected readonly hrZones = computed(() => this.zoneRows(this.samples().map(s => ({ t: Date.parse(s.t), v: s.hr })), this.prefs.maxHr(), ZONE_FLOORS));
+	protected readonly powerZones = computed(() => {
+		const t = this.prefs.thresholdPower();
+		return t ? this.zoneRows(this.samples().map(s => ({ t: Date.parse(s.t), v: s.power })), t, POWER_ZONE_FLOORS, POWER_ZONE_NAMES) : null;
+	});
+	protected readonly hrLimits = computed(() => limitsText(this.prefs.maxHr(), ZONE_FLOORS));
+	protected readonly powerLimits = computed(() => limitsText(this.prefs.thresholdPower() ?? 0, POWER_ZONE_FLOORS, POWER_ZONE_NAMES));
+
+	private zoneRows(points: { t: number; v: number | null | undefined }[], reference: number, floors: number[], names?: string[]) {
+		const seconds = timeInZones(points, reference, floors);
 		const total = seconds.reduce((a, b) => a + b, 0);
 		if (!total) {
 			return null;
 		}
-		return seconds.map((sec, i) => ({ name: `Z${i + 1}`, seconds: Math.round(sec), percent: Math.round((sec / total) * 100) }));
-	});
-	protected readonly limits = computed(() => ZONE_FLOORS.slice(1).map(f => Math.ceil(f * this.prefs.maxHr())));
+		return seconds.map((sec, i) => ({ name: `Z${i + 1}`, label: names ? names[i] : `Zone ${i + 1}`, seconds: Math.round(sec), percent: Math.round((sec / total) * 100) }));
+	}
 	protected readonly hasCadence = computed(() => !!this.workout()?.steps.some(s => s.avgCadence));
 	protected readonly hasPower = computed(() => !!this.workout()?.steps.some(s => s.avgPower));
 
