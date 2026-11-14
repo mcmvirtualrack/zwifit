@@ -4,6 +4,7 @@ import { HrHistoryService } from '../core/hr-history.service';
 import { RestartService } from '../core/restart.service';
 import { SocketService } from '../core/socket.service';
 import { ToastService } from '../core/toast.service';
+import { StepCountdownComponent } from '../shared/step-countdown.component';
 
 const ACTIVE = ['waiting', 'running', 'paused', 'resuming'];
 
@@ -15,7 +16,7 @@ type FsElement = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> |
 // segmented control on the top right; on narrow screens the links wrap below the brand.
 @Component({
 	selector: 'app-shell',
-	imports: [RouterOutlet, RouterLink, RouterLinkActive],
+	imports: [RouterOutlet, RouterLink, RouterLinkActive, StepCountdownComponent],
 	template: `
 		<div class="shell">
 			<header class="topbar">
@@ -57,6 +58,7 @@ type FsElement = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> |
 				<router-outlet />
 			</main>
 		</div>
+		<app-step-countdown />
 		<div class="visually-hidden" aria-live="polite">{{ toast.message() }}</div>
 		@if (toast.message()) { <div class="toast" role="status">{{ toast.message() }}</div> }
 	`

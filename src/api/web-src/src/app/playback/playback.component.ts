@@ -1,3 +1,5 @@
+import { atIntensity } from '../core/intensity';
+import { IntensityControlComponent } from '../shared/intensity-control.component';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SensorSource } from '../core/api.types';
@@ -19,7 +21,7 @@ const average = (values: number[]) => (values.length ? Math.round(values.reduce(
 
 @Component({
 	selector: 'app-playback',
-	imports: [RouterLink, HrTraceComponent, LiveChartComponent],
+	imports: [IntensityControlComponent, RouterLink, HrTraceComponent, LiveChartComponent],
 	templateUrl: './playback.component.html'
 })
 export class PlaybackComponent {
@@ -82,7 +84,7 @@ export class PlaybackComponent {
 
 	protected readonly targetKph = computed(() => {
 		const p = this.p();
-		return p?.override?.kph ?? p?.current?.targetKph ?? 0;
+		return p?.override?.kph ?? (p?.current ? atIntensity(p.current.targetKph, p.intensity, this.treadmill()?.limits) : 0);
 	});
 
 	protected readonly onTarget = computed(() => {
@@ -142,7 +144,7 @@ export class PlaybackComponent {
 			const share = high > low ? (s.kph - low) / (high - low) : 1;
 			return {
 				label: s.label,
-				target: `${this.prefs.speed(s.kph)} ${this.prefs.speedLabel()}${controlIncline ? ` · ${s.incline}%` : ''}`,
+				target: `${this.prefs.speed(atIntensity(s.kph, this.p()?.intensity, this.treadmill()?.limits))} ${this.prefs.speedLabel()}${controlIncline ? ` · ${s.incline}%` : ''}`,
 				duration: clock(s.seconds),
 				shade: share > 0.66 ? 3 : share > 0.33 ? 2 : 1
 			};

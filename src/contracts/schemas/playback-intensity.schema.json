@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zwifit.local/schemas/playback-intensity.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["percent"],
+  "properties": { "percent": { "type": "integer", "minimum": 50, "maximum": 120 } }
+}

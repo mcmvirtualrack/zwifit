@@ -239,6 +239,8 @@ export interface Playback {
 	stepRemaining: { seconds?: number; metres?: number } | null;
 	planRemaining: { seconds: number; metres: number } | null;
 	override: { kph?: number; incline?: number } | null;
+	// Workout intensity in % (50–120; 100 = as planned): scales every step's target speed.
+	intensity?: number;
 	controlIncline: boolean;
 	estimated: boolean;
 	endReason: EndReason | null;
@@ -253,7 +255,7 @@ export interface WorkoutSummary {
 	endedAt: string | null;
 	endReason: EndReason | null;
 	// avgIncline / maxIncline (%) and climbMetres: only for runs where the belt was ever tilted.
-	totals: { seconds: number; metres: number; avgHr?: number; maxHr?: number; avgCadence?: number; avgPower?: number; maxPower?: number; avgIncline?: number; maxIncline?: number; climbMetres?: number };
+	totals: { seconds: number; metres: number; avgHr?: number; maxHr?: number; avgCadence?: number; avgPower?: number; maxPower?: number; avgIncline?: number; maxIncline?: number; climbMetres?: number; movingSeconds?: number; avgKph?: number };
 }
 
 export interface StepResult {

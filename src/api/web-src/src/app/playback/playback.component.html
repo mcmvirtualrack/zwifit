@@ -49,6 +49,8 @@
 			}
 		</div>
 
+		@if (!finished()) { <app-intensity-control /> }
+
 		<div aria-live="polite" class="stack">
 			@if (pb.message) { <div class="banner banner--accent" role="status">{{ pb.message }}</div> }
 			@if (finished() && pb.endReason) {

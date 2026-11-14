@@ -78,6 +78,7 @@ Unknown events are dropped and logged (event name only). Max 20 commands/second 
 | `playback:resume` | — | paused → running, sends targets. `RESUME_REFUSED` if treadmill won't start. |
 | `playback:skip` | — | Advance to next step (or complete). |
 | `playback:stop` | — | → ended(`userStopped`). |
+| `playback:intensity` | `{ percent: 50–120 }` (integer) | Workout intensity: the current step's target speed is resent at once and every later step's is scaled (inclines unchanged, 0.1 km/h, within limits); a manual speed change in the step is dropped. Refused `NOT_RUNNING` without an active plan. Resets to 100 for each plan. `ack` with the playback snapshot (`intensity`). |
 | `workouts:list` | `{ before?: timestamp, limit?: 1–100 }` | Summaries, newest first. |
 | `workouts:get` | `{ id }` | Workout with step results (not samples). |
 | `workouts:samples` | `{ id, fromIndex?, limit?: ≤ 3600 }` | Paged samples. |
@@ -89,7 +90,7 @@ Unknown events are dropped and logged (event name only). Max 20 commands/second 
 |-------|---------|------|
 | `status` | `{ treadmill: TreadmillStatus, broadcast: BroadcastStatus, sensors: { ant: AntStatus, bluetooth: BluetoothSensorsStatus } }` (below). `treadmill.hr` / `cadence` / `power` are merged per `settings.sensors` (see [data-model.md](../data-model.md#settings--settingsjson)): `auto` = a fresh ANT+ reading, else a fresh Bluetooth one, else the treadmill's own (heart rate, cadence); `ant` / `ble` / `treadmill` = only that one; `off` = none. A reading counts while under 5 s old; a disconnected treadmill's own heart rate and cadence are ignored. `hrSource` / `cadenceSource` / `powerSource` (`ant` \| `ble` \| `treadmill`) say where each value came from. `power` (watts, averaged over `powerSmoothing` s) is present only while a power sensor reports. `treadmill.speedSource` (`measured` \| `set` \| `estimated`) says whether `kph` is the measured belt speed. `freeRun`: `{ state: "idle" \| "running" \| "paused", startedAt?, seconds?, metres? }` for a run without a plan. | On connect, on change, and at 1 Hz while belt moving. |
 | `settings` | Settings (secrets/BLE internals omitted) | On connect and after save. |
-| `playback` | `{ state, planId, planName, cursor, current: Step, next?: Step, stepRemaining, planRemaining, override, endReason?, message? }` | On connect, on any state change, 1 Hz while running. Same to all clients (FR-018). |
+| `playback` | `{ state, planId, planName, cursor, current: Step, next?: Step, stepRemaining, planRemaining, override, intensity, endReason?, message? }` (`current`/`next` carry the planned `targetKph`; the speed sent is `targetKph × intensity / 100`) | On connect, on any state change, 1 Hz while running. Same to all clients (FR-018). |
 | `plans:changed` | `{ id, deleted?: true }` | After any plan mutation. |
 | `programs:changed` | `{ id, deleted?: true }` | After a program is created, deleted, or a day gets its plan. |
 | `workouts:changed` | `{ id, deleted?: true }` | After a workout ends or is deleted. |

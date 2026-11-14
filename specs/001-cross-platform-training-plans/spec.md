@@ -7,7 +7,8 @@
 **Status**: Implemented; owner hardware checks pending (updated 2026-11-02: sensors, broadcast of
 sensor data, redesign; 2026-11-13: training programs, HTTPS port, pairing code in app; 2026-11-14:
 status, free runs, sensor names, Bluetooth/Zwift coexistence, measured speed to Zwift, incline in
-history, custom programs, zone colours, incline over the speed chart, tablet layout)
+history, custom programs, zone colours, incline over the speed chart, tablet layout, average pace,
+step countdown, workout intensity)
 
 **Input**: User description: "refactor the code so that it can run on linux, mac or windows, improve
 the UI and ability to create a training plan that will configure the speed, incline and intervals of
@@ -65,6 +66,13 @@ every steps. Use the Ubuntu WSL installed on this windows to deploy the program 
 - Q: How should the page behave on an iPad? → A: Use the full width (up to 1600 px), size the
   live lanes to the screen height, tighter tablet spacing, a full-screen button where the browser
   supports it, and open full screen when added to the home screen.
+- Q: Should History show average pace and power? → A: Average pace over moving time (pauses do
+  not slow it), with average speed and moving time; average power with maximum, W/kg and % of
+  threshold when power was recorded.
+- Q: How should a step change be announced? → A: A big flashing 5-second countdown over every page
+  with the next step, a beep each second and a long tone at the change; switchable per browser.
+- Q: How can the workout be made easier on the fly? → A: A workout intensity (50–120 % in 5 %
+  steps) on the Workout page and dashboard that scales the current and all later step speeds.
 
 ### Session 2026-11-02
 
@@ -460,6 +468,18 @@ it, and see the day marked done.
 - **FR-019j**: A workout's detail page MUST show the time and share in each heart-rate zone and,
   when a threshold power is set and power was recorded, in each power zone, computed from the
   samples (gaps over 5 s count 5 s), with each zone's limits.
+- **FR-019k**: While a plan runs, the user MUST be able to change the workout intensity (50–120 %
+  in 5 % steps, 100 % = as planned) from the Workout page and the dashboard: the current step's
+  target speed changes at once and every later step's is scaled too (inclines unchanged, rounded to
+  0.1 km/h, within the treadmill limits); it replaces a manual speed change in the current step and
+  resets to 100 % for each new plan. Displayed targets show the scaled speed.
+- **FR-022c**: In the last 5 s of a plan step a large flashing countdown MUST appear over every page
+  (not blocking taps) with the next step's name, speed and incline ("Workout ends in" on the last
+  step), with a beep each second and a long tone when the next step starts; both can be turned off
+  per browser in Settings → Display.
+- **FR-019l**: A workout's detail page and the history list MUST show the average pace over moving
+  time (seconds in which the distance grew), with the average speed and moving time; workouts saved
+  before moving time was recorded use their samples (detail) or elapsed time (list).
 - **FR-019f**: Workout history and heart-rate data are personal health data: they MUST only be
   viewable or exportable by paired devices and MUST NOT be written to application logs.
 

@@ -2586,3 +2586,112 @@
 .program-grid__actions {
 	white-space: nowrap;
 }
+
+// The 5-second countdown before a plan step changes: big, flashing, over every page; taps pass through.
+.countdown {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: grid;
+	place-items: center;
+	pointer-events: none;
+	background: color-mix(in srgb, var(--bg) 35%, transparent);
+	animation: countdown-flash 1s ease-out infinite;
+}
+
+.countdown__panel {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	padding: 20px 48px 28px;
+	border-radius: 28px;
+	background: var(--glass);
+	border: 2px solid var(--warn);
+	box-shadow: 0 0 60px color-mix(in srgb, var(--warn) 35%, transparent);
+}
+
+.countdown__eyebrow {
+	font-size: 14px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--text-soft);
+}
+
+.countdown__number {
+	font: 800 clamp(120px, 34vmin, 300px)/1 var(--font-numeric);
+	color: var(--warn);
+	animation: countdown-pop 1s ease-out infinite;
+}
+
+.countdown__next {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 6px 14px;
+	font-size: clamp(16px, 3vmin, 26px);
+	color: var(--text);
+}
+
+.countdown--last {
+	.countdown__panel {
+		border-color: var(--accent);
+		box-shadow: 0 0 80px color-mix(in srgb, var(--accent) 45%, transparent);
+	}
+
+	.countdown__number {
+		color: var(--accent);
+	}
+}
+
+@keyframes countdown-flash {
+	0% { background: color-mix(in srgb, var(--warn) 22%, transparent); }
+	60%, 100% { background: color-mix(in srgb, var(--bg) 35%, transparent); }
+}
+
+@keyframes countdown-pop {
+	0% { transform: scale(1.18); opacity: 0.6; }
+	25% { transform: scale(1); opacity: 1; }
+	100% { transform: scale(0.96); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.countdown,
+	.countdown__number {
+		animation: none;
+	}
+}
+
+// Workout intensity (Workout page and dashboard while a plan runs).
+.intensity {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.intensity__label {
+	min-width: 104px;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+}
+
+.intensity__value {
+	min-width: 56px;
+	text-align: center;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--text-strong);
+}
+
+.intensity__value--changed {
+	color: var(--warn);
+}
+
+.intensity__reset {
+	min-height: 44px;
+}

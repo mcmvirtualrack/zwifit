@@ -21,6 +21,9 @@ const RESEND_AFTER_MS = 5000;
 const SPEED_TOLERANCE_KPH = 0.3;
 const ACTIVE = new Set(['waiting', 'running', 'paused', 'resuming']);
 const CONSOLE_STOP_MODES = new Set(['Pause', 'Idle']);
+// Workout intensity: every step's target speed times this percentage (inclines unchanged).
+const MIN_INTENSITY = 50;
+const MAX_INTENSITY = 120;
 
 const WAITING_MESSAGE = 'Start the belt on your treadmill';
 const RESUME_MESSAGE = 'Start the belt on your treadmill to continue';
@@ -45,6 +48,7 @@ class PlaybackEngine extends EventEmitter {
 		this._step = { seconds: 0, metres: 0 };
 		this._elapsed = { seconds: 0, metres: 0 };
 		this._override = null;
+		this._intensity = 100;
 		this._endReason = null;
 		this._message = null;
 		this._estimated = false;
@@ -198,6 +202,41 @@ class PlaybackEngine extends EventEmitter {
 		this._emitState();
 	}
 
+	// Workout intensity (FR-019k): scales the target speed of the current step (now) and of every
+	// later step; a manual speed change in the current step is replaced by the scaled target.
+	async setIntensity(percent) {
+		if (!this.isActive()) {
+			throw new AppError('NOT_RUNNING', 'No plan is running.');
+		}
+		const value = Math.round(percent);
+		if (!Number.isFinite(value) || value < MIN_INTENSITY || value > MAX_INTENSITY) {
+			throw new AppError('OUT_OF_RANGE', `Intensity must be ${MIN_INTENSITY}–${MAX_INTENSITY} %.`);
+		}
+		this._intensity = value;
+		this.emit('event', { type: 'intensity', percent: value });
+		if (this._state === 'running') {
+			if (this._override) {
+				delete this._override.kph;
+				if (!Object.keys(this._override).length) {
+					this._override = null;
+				}
+			}
+			const kph = this._scaledKph(this._flat[this._index].step.targetKph);
+			await this._call(() => this._adapter.setTarget({ kph }));
+			this._noteSent({ kph });
+		}
+		this._emitState();
+	}
+
+	// A step's target speed at the current intensity, rounded to 0.1 km/h, within the treadmill limits.
+	_scaledKph(kph) {
+		if (this._intensity === 100) {
+			return kph;
+		}
+		const { minKph, maxKph } = this._getLimits();
+		return Math.min(maxKph, Math.max(minKph, Math.round(kph * this._intensity / 10) / 10));
+	}
+
 	// --- Treadmill input ------------------------------------------------------------------
 
 	onStatus(status) {
@@ -327,7 +366,7 @@ class PlaybackEngine extends EventEmitter {
 	}
 
 	_targetsFor(step) {
-		const target = { kph: step.targetKph };
+		const target = { kph: this._scaledKph(step.targetKph) };
 		if (this._plan.controlIncline !== false) {
 			target.incline = step.targetIncline;
 		}
@@ -399,7 +438,7 @@ class PlaybackEngine extends EventEmitter {
 		const step = current.end.type === 'time'
 			? { seconds: Math.max(0, current.end.seconds - this._step.seconds) }
 			: { metres: Math.max(0, current.end.metres - this._step.metres) };
-		const metresPerSecond = current.targetKph / 3.6;
+		const metresPerSecond = this._scaledKph(current.targetKph) / 3.6;
 		let seconds = step.seconds ?? step.metres / metresPerSecond;
 		let metres = step.metres ?? step.seconds * metresPerSecond;
 		for (const entry of this._flat.slice(this._index + 1)) {
@@ -434,6 +473,7 @@ class PlaybackEngine extends EventEmitter {
 			stepRemaining: remaining.step,
 			planRemaining: remaining.plan,
 			override: this._override,
+			intensity: this._intensity,
 			controlIncline: this._plan ? this._plan.controlIncline !== false : true,
 			estimated: this._estimated,
 			endReason: this._endReason,

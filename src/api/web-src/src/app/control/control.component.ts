@@ -1,3 +1,5 @@
+import { atIntensity } from '../core/intensity';
+import { IntensityControlComponent } from '../shared/intensity-control.component';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SensorSource } from '../core/api.types';
@@ -22,7 +24,7 @@ const average = (values: number[]) => (values.length ? Math.round(values.reduce(
 
 @Component({
 	selector: 'app-control',
-	imports: [RouterLink, LiveChartComponent, SparkComponent],
+	imports: [IntensityControlComponent, RouterLink, LiveChartComponent, SparkComponent],
 	templateUrl: './control.component.html'
 })
 export class ControlComponent {
@@ -216,7 +218,7 @@ export class ControlComponent {
 	protected readonly planPercent = computed(() => this.planTime()?.percent ?? 0);
 	protected readonly targetText = computed(() => {
 		const step = this.planActive() ? this.playback()?.current : null;
-		return step ? this.prefs.speed(this.playback()?.override?.kph ?? step.targetKph) : '';
+		return step ? this.prefs.speed(this.playback()?.override?.kph ?? atIntensity(step.targetKph, this.playback()?.intensity, this.treadmill()?.limits)) : '';
 	});
 
 	protected readonly stepText = computed(() => {
@@ -228,7 +230,7 @@ export class ControlComponent {
 		const left = p.stepRemaining?.seconds !== undefined
 			? `${this.prefs.duration(p.stepRemaining.seconds)} left in step`
 			: p.stepRemaining?.metres !== undefined ? `${this.prefs.distance(p.stepRemaining.metres)} ${this.prefs.distanceLabel()} left in step` : '';
-		return `${step.label || 'Step ' + (step.flatIndex + 1)} ${this.prefs.speed(step.targetKph)} ${this.prefs.speedLabel()}${left ? ' · ' + left : ''}`;
+		return `${step.label || 'Step ' + (step.flatIndex + 1)} ${this.prefs.speed(atIntensity(step.targetKph, this.playback()?.intensity, this.treadmill()?.limits))} ${this.prefs.speedLabel()}${left ? ' · ' + left : ''}`;
 	});
 
 	protected readonly nextText = computed(() => {
@@ -237,7 +239,7 @@ export class ControlComponent {
 			return '';
 		}
 		const end = next.end.type === 'time' ? this.prefs.duration(next.end.seconds) : `${this.prefs.distance(next.end.metres)} ${this.prefs.distanceLabel()}`;
-		return `${next.label || 'Step ' + (next.flatIndex + 1)} ${this.prefs.speed(next.targetKph)} ${this.prefs.speedLabel()} · ${end}`;
+		return `${next.label || 'Step ' + (next.flatIndex + 1)} ${this.prefs.speed(atIntensity(next.targetKph, this.playback()?.intensity, this.treadmill()?.limits))} ${this.prefs.speedLabel()} · ${end}`;
 	});
 
 	// The plan as a strip of steps, shaded by how hard each one is.

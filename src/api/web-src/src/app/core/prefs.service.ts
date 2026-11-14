@@ -5,6 +5,8 @@ import * as units from './units';
 export type Theme = 'system' | 'light' | 'dark';
 const THEME_KEY = 'zwifit.theme';
 const MAX_HR_KEY = 'zwifit.maxHr';
+const COUNTDOWN_KEY = 'zwifit.stepCountdown';
+const COUNTDOWN_SOUND_KEY = 'zwifit.stepCountdownSound';
 // The units Zwifit last told this browser, used until its settings arrive (so a page that is
 // still connecting doesn't flash miles at a metric user).
 const METRIC_KEY = 'zwifit.metric';
@@ -81,6 +83,9 @@ export class PrefsService {
 	readonly paceLabel = computed(() => units.paceUnit(this.metric()));
 	readonly theme = signal<Theme>(this.readTheme());
 	readonly maxHr = signal<number>(this.readNumber(MAX_HR_KEY, 120, 230) ?? DEFAULT_MAX_HR);
+	// The 5-second countdown before each plan step, and its beeps (both on unless turned off here).
+	readonly stepCountdown = signal(this.read(COUNTDOWN_KEY) !== '0');
+	readonly stepCountdownSound = signal(this.read(COUNTDOWN_SOUND_KEY) !== '0');
 	// Running power threshold (e.g. Stryd's critical power) in watts, and body weight in kg; null when not set.
 	readonly thresholdPower = computed(() => this.socket.settings()?.sensors?.thresholdPower ?? null);
 	readonly weightKg = computed(() => this.socket.settings()?.sensors?.weightKg ?? null);
@@ -99,6 +104,16 @@ export class PrefsService {
 		const value = Math.round(Math.min(230, Math.max(120, Number(bpm) || DEFAULT_MAX_HR)));
 		this.maxHr.set(value);
 		this.write(MAX_HR_KEY, String(value));
+	}
+
+	setStepCountdown(on: boolean): void {
+		this.stepCountdown.set(on);
+		this.write(COUNTDOWN_KEY, on ? '1' : '0');
+	}
+
+	setStepCountdownSound(on: boolean): void {
+		this.stepCountdownSound.set(on);
+		this.write(COUNTDOWN_SOUND_KEY, on ? '1' : '0');
 	}
 
 	private readNumber(key: string, min: number, max: number): number | null {

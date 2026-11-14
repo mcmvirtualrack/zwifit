@@ -360,6 +360,14 @@
 						[value]="prefs.maxHr()" (change)="prefs.setMaxHr($any($event.target).valueAsNumber)">
 				</div>
 				<p class="field__hint">Zones: Z1 below 60 % of the maximum, then 70, 80 and 90 %. Limits are shown in the units chosen when this page loaded; save, then they re-display.</p>
+				<div class="switch-row">
+					<span class="switch-row__text" id="sw-countdown"><strong>Step countdown <span class="muted">(this browser)</span></strong><span class="muted">Big 5-second countdown before each plan step changes</span></span>
+					<button type="button" class="switch" role="switch" aria-labelledby="sw-countdown" [attr.aria-checked]="prefs.stepCountdown()" (click)="prefs.setStepCountdown(!prefs.stepCountdown())"><span class="switch__track"></span></button>
+				</div>
+				<div class="switch-row">
+					<span class="switch-row__text" id="sw-countdown-sound"><strong>Countdown beeps <span class="muted">(this browser)</span></strong><span class="muted">A beep each second and a long tone as the next step starts. On iPad, tap the page once after loading so sound can play; the silent switch mutes it.</span></span>
+					<button type="button" class="switch" role="switch" aria-labelledby="sw-countdown-sound" [attr.aria-checked]="prefs.stepCountdownSound()" [disabled]="!prefs.stepCountdown()" (click)="prefs.setStepCountdownSound(!prefs.stepCountdownSound())"><span class="switch__track"></span></button>
+				</div>
 			</section>
 
 			<section class="card stack" id="devices" aria-labelledby="devices-title">

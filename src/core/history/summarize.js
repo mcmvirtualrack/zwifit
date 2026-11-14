@@ -86,11 +86,29 @@ function summarize({ planSnapshot, startedAt }, samples) {
 		totals.avgPower = Math.round(average(powers));
 		totals.maxPower = Math.max(...powers);
 	}
+	Object.assign(totals, paceTotals(samples, totals.metres));
 	Object.assign(totals, inclineTotals(samples));
 	return { steps, totals };
 }
 
 const positive = values => values.filter(v => typeof v === 'number' && v > 0);
+
+// Moving time (s) — the seconds in which the distance grew, a gap over 5 s counting 5 —
+// and the average speed over it (km/h), from which the page shows the average pace. Pauses and
+// stops do not slow the average.
+const MAX_GAP_S = 5;
+function paceTotals(samples, metres) {
+	let moving = 0;
+	for (let i = 1; i < samples.length; i++) {
+		if (samples[i].metres > samples[i - 1].metres) {
+			moving += Math.min(MAX_GAP_S, Math.max(0, (Date.parse(samples[i].t) - Date.parse(samples[i - 1].t)) / 1000));
+		}
+	}
+	if (!moving || !metres) {
+		return {};
+	}
+	return { movingSeconds: Math.round(moving), avgKph: round((metres / moving) * 3.6) };
+}
 
 // Incline over the run, only when the belt was ever tilted: average and highest while moving (%),
 // and the height climbed (m): each stretch of distance times the incline it was run at, uphill only.

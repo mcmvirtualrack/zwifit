@@ -306,6 +306,9 @@ FR-027a, FR-029, FR-032a, FR-033a, FR-038.
 - [X] T159 Power zones from threshold power (tiles, live lane, History chart, time in power zone): app/core/prefs.service.ts, app/control/*, app/playback/*, app/shared/*, app/history/*
 - [X] T160 Dashboard: time in zone inside the heart-rate lane; incline row under the belt controls; incline trace over the speed lane: app/control/*, app/shared/live-chart.component.ts, styles/_screens.scss
 - [X] T161 Tablet layout and full screen (1600 px page, viewport-height lanes, safe areas, Fullscreen button, home-screen meta): src/index.html, app/shell/shell.component.ts, styles/_shell.scss, _screens.scss, _tokens.scss
+- [X] T163 Average pace over moving time (`totals.movingSeconds`, `avgKph`) in History; W/kg and % of threshold on the Avg power tile: src/core/history/summarize.js, test/unit/core/history/summarize.test.js, app/history/*
+- [X] T164 Step countdown (5 s, flashing, beeps, Settings → Display switches): app/shared/step-countdown.component.ts, app/shell/shell.component.ts, app/core/prefs.service.ts, app/settings/*
+- [X] T165 Workout intensity 50–120 % (`playback:intensity`, `playback.intensity`), controls on the Workout page and dashboard, scaled targets shown: src/core/playback/engine.js, src/api/socket/playback.js, src/contracts/schemas/playback-intensity.schema.json, test/unit/core/playback/engine.test.js, app/core/intensity.ts, app/shared/intensity-control.component.ts, app/playback/*, app/control/*
 - [ ] T162 Owner: check the dashboard on the iPad (landscape and portrait, from the home screen) and power zones with a threshold set
 
 ---

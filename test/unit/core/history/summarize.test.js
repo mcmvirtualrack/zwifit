@@ -1,4 +1,4 @@
-// Incline totals in a workout summary (average, highest, height climbed).
+// Incline and pace totals in a workout summary (average, highest, height climbed; moving time, average speed).
 const { summarize } = require('../../../../src/core/history/summarize');
 
 const t0 = Date.parse('2026-11-01T10:00:00Z');
@@ -25,4 +25,15 @@ test('stopped seconds do not count toward the average', () => {
 	const samples = run(Array(61).fill(5));
 	samples.push({ ...samples.at(-1), t: new Date(t0 + 61000).toISOString(), kph: 0, incline: 0 });
 	expect(summarize(header, samples).totals.avgIncline).toBe(5);
+});
+
+test('moving time and average speed leave out time stopped', () => {
+	// 100 s at 3 m/s (300 m), then 60 s stopped: moving 100 s, 10.8 km/h, though 160 s elapsed.
+	const samples = run(Array(101).fill(0));
+	for (let i = 1; i <= 60; i++) {
+		samples.push({ ...samples[100], t: new Date(t0 + (100 + i) * 1000).toISOString(), kph: 0 });
+	}
+	const { totals } = summarize(header, samples);
+	expect(totals).toMatchObject({ seconds: 160, metres: 300, movingSeconds: 100, avgKph: 10.8 });
+	expect(summarize(header, [samples[0]]).totals).not.toHaveProperty('avgKph');
 });

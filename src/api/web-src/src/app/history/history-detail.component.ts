@@ -36,6 +36,9 @@ function limitsText(reference: number, floors: number[], names?: string[]): stri
 			<div class="detail-grid">
 				<app-stat-tile label="Time" [value]="prefs.duration(w.totals.seconds)" />
 				<app-stat-tile label="Distance" [value]="prefs.distance(w.totals.metres)" [unit]="prefs.distanceLabel()" />
+				@if (avgKph(); as kph) {
+					<app-stat-tile label="Avg pace" [value]="prefs.pace(kph)" [unit]="prefs.paceLabel()" [sub]="prefs.speed(kph) + ' ' + prefs.speedLabel() + ' · moving ' + prefs.duration(movingSeconds())" />
+				}
 				<app-stat-tile label="Avg HR" [value]="w.totals.avgHr ? '' + w.totals.avgHr : '–'" [unit]="w.totals.avgHr ? 'bpm' : ''" [sub]="w.totals.avgHr ? '' : 'not available'" variant="hr" />
 				<app-stat-tile label="Max HR" [value]="w.totals.maxHr ? '' + w.totals.maxHr : '–'" [unit]="w.totals.maxHr ? 'bpm' : ''" variant="hr" />
 				@if (w.totals.avgCadence) {
@@ -46,7 +49,7 @@ function limitsText(reference: number, floors: number[], names?: string[]): stri
 					<app-stat-tile label="Climb" [value]="prefs.height(w.totals.climbMetres)" [unit]="prefs.heightLabel()" />
 				}
 				@if (w.totals.avgPower) {
-					<app-stat-tile label="Avg power" [value]="'' + w.totals.avgPower" unit="W" [sub]="'max ' + w.totals.maxPower + ' W'" variant="power" />
+					<app-stat-tile label="Avg power" [value]="'' + w.totals.avgPower" unit="W" [sub]="powerSub(w.totals.avgPower, w.totals.maxPower)" variant="power" />
 				}
 			</div>
 			@if (hrZones(); as z) {
@@ -147,6 +150,43 @@ export class HistoryDetailComponent implements OnInit {
 			return null;
 		}
 		return seconds.map((sec, i) => ({ name: `Z${i + 1}`, label: names ? names[i] : `Zone ${i + 1}`, seconds: Math.round(sec), percent: Math.round((sec / total) * 100) }));
+	}
+	// Moving time and average speed: from the totals, or worked out from the samples for workouts
+	// recorded before they were saved (distance grew that second; gaps over 5 s count 5).
+	protected readonly movingSeconds = computed(() => {
+		const saved = this.workout()?.totals.movingSeconds;
+		if (saved) {
+			return saved;
+		}
+		const list = this.samples();
+		let moving = 0;
+		for (let i = 1; i < list.length; i++) {
+			if (list[i].metres > list[i - 1].metres) {
+				moving += Math.min(5, Math.max(0, (Date.parse(list[i].t) - Date.parse(list[i - 1].t)) / 1000));
+			}
+		}
+		return Math.round(moving);
+	});
+	protected readonly avgKph = computed(() => {
+		const w = this.workout();
+		if (w?.totals.avgKph) {
+			return w.totals.avgKph;
+		}
+		const seconds = this.movingSeconds();
+		return w && seconds && w.totals.metres ? (w.totals.metres / seconds) * 3.6 : null;
+	});
+	// "max 310 W · 3.6 W/kg · 92 % of threshold", with the parts that are known.
+	protected powerSub(avg: number, max?: number): string {
+		const parts = max ? [`max ${max} W`] : [];
+		const kg = this.prefs.weightKg();
+		if (kg) {
+			parts.push(`${(avg / kg).toFixed(1)} W/kg`);
+		}
+		const t = this.prefs.thresholdPower();
+		if (t) {
+			parts.push(`${Math.round((avg / t) * 100)}% of threshold`);
+		}
+		return parts.join(' · ');
 	}
 	protected readonly hasCadence = computed(() => !!this.workout()?.steps.some(s => s.avgCadence));
 	protected readonly hasPower = computed(() => !!this.workout()?.steps.some(s => s.avgPower));

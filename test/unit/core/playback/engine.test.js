@@ -378,3 +378,31 @@ test('dispose returns to idle (app restart) without sending anything', async () 
 	await clock.advance(30000);
 	expect(adapter.calls).toHaveLength(1);
 });
+
+describe('intensity (FR-019k)', () => {
+	test('scales the current step now and every later step, inclines unchanged, within the limits', async () => {
+		moving();
+		await engine.start(twoSteps());
+		await engine.setIntensity(90);
+		expect(adapter.calls[1]).toEqual(['setTarget', { kph: 7.2 }]);
+		expect(states[states.length - 1]).toMatchObject({ intensity: 90 });
+		await clock.advance(10250);
+		expect(adapter.calls.at(-1)).toEqual(['setTarget', { kph: 9, incline: 2 }]);
+		expect(events).toContainEqual({ type: 'intensity', percent: 90 });
+	});
+
+	test('replaces a manual speed change in the step, is refused outside 50–120 % or with no plan, and resets on a new plan', async () => {
+		await expect(engine.setIntensity(90)).rejects.toMatchObject({ code: 'NOT_RUNNING' });
+		moving();
+		await engine.start(twoSteps());
+		await engine.override({ kph: 9.5 });
+		await engine.setIntensity(80);
+		expect(adapter.calls.at(-1)).toEqual(['setTarget', { kph: 6.4 }]);
+		expect(engine.snapshot().override).toBeNull();
+		await expect(engine.setIntensity(40)).rejects.toMatchObject({ code: 'OUT_OF_RANGE' });
+		await engine.stop();
+		await engine.start(twoSteps());
+		expect(engine.snapshot().intensity).toBe(100);
+		expect(adapter.calls.at(-1)).toEqual(['setTarget', { kph: 8, incline: 1 }]);
+	});
+});
