@@ -1,7 +1,7 @@
-import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ApiError, Device, FoundSensor, SensorKind, Settings, ValidationIssue } from '../core/api.types';
+import { AntBroadcastKind, ApiError, Device, FoundSensor, SensorKind, Settings, ValidationIssue } from '../core/api.types';
 import { PrefsService, Theme } from '../core/prefs.service';
 import { SessionService } from '../core/session.service';
 import { RestartService } from '../core/restart.service';
@@ -27,6 +27,7 @@ interface Form {
 	rsc: boolean;
 	hr: boolean;
 	ant: boolean;
+	bluetoothWithZwift: boolean;
 	hrSource: SourceMode;
 	cadenceSource: SourceMode;
 	powerSource: 'auto' | 'ant' | 'ble' | 'off';
@@ -36,6 +37,14 @@ interface Form {
 	// Power to Zwift: inside the Fitness Machine data, and as its own Bluetooth power meter.
 	ftmsPower: boolean;
 	powerMeter: boolean;
+	// ANT+ broadcast: Zwifit as ANT+ sensors for a watch or head unit (specs/003).
+	antBroadcast: boolean;
+	antFootpod: boolean;
+	antHr: boolean;
+	antPower: boolean;
+	antTreadmill: boolean;
+	antRebroadcastHr: boolean;
+	antRebroadcastPower: boolean;
 	port: number;
 	host: string;
 }
@@ -89,6 +98,29 @@ const SOURCE_OPTIONS: Record<SensorKind, { value: string; label: string }[]> = {
 const KIND_ORDER: SensorKind[] = ['hr', 'power', 'cadence'];
 const UNIT: Record<SensorKind, string> = { hr: 'bpm', power: 'W', cadence: 'spm' };
 const STATE_ORDER = { connected: 0, connecting: 1, auto: 2, searching: 3, found: 4 };
+const KIND_LABEL: Record<SensorKind, string> = { hr: 'Heart rate', power: 'Power', cadence: 'Cadence' };
+
+// One row in "ANT+ devices in range": heard now, or found in the last scan.
+interface AntInRangeRow {
+	id: string;
+	name: string;
+	kinds: string;
+	reading: string;
+	detail: string;
+	status: string;
+	inUse: boolean;
+	rssi: number | null;
+}
+
+// "just now", "40 s ago", "3 min ago", "2 h ago".
+function ago(iso: string | undefined, now: number): string {
+	const at = iso ? Date.parse(iso) : NaN;
+	if (!Number.isFinite(at)) {
+		return '';
+	}
+	const s = Math.max(0, Math.round((now - at) / 1000));
+	return s < 10 ? 'just now' : s < 60 ? `${s} s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : `${Math.round(s / 3600)} h ago`;
+}
 
 // A name for a sensor that does not send one, from what it measures.
 function defaultName(kinds: SensorKind[]): string {
@@ -130,13 +162,21 @@ export class SettingsComponent implements OnInit {
 	];
 	protected readonly sections = [
 		{ id: 'treadmill', label: 'Treadmill' }, { id: 'console', label: 'Console readout' }, { id: 'limits', label: 'Safety limits' }, { id: 'zwift', label: 'Zwift broadcast' },
-		{ id: 'sensors', label: 'Sensors' }, { id: 'display', label: 'Display' }, { id: 'devices', label: 'Paired devices' },
+		{ id: 'sensors', label: 'Sensors' }, { id: 'ant-broadcast', label: 'ANT+ broadcast' }, { id: 'display', label: 'Display' }, { id: 'devices', label: 'Paired devices' },
 		{ id: 'server', label: 'Server' }
 	];
 	protected readonly active = signal('treadmill');
 	protected readonly treadmill = computed(() => this.socket.status()?.treadmill ?? null);
 	protected readonly broadcast = computed(() => this.socket.status()?.broadcast ?? null);
 	protected readonly ant = computed(() => this.socket.status()?.sensors?.ant ?? null);
+	protected readonly antBroadcast = computed(() => this.socket.status()?.antBroadcast ?? null);
+	protected readonly antBroadcastKinds: { kind: AntBroadcastKind; label: string; hint: string }[] = [
+		{ kind: 'footpod', label: 'Footpod', hint: 'Speed, distance and cadence · pair "Footpod" on a watch' },
+		{ kind: 'hr', label: 'Heart rate', hint: 'The heart rate shown on the dashboard' },
+		{ kind: 'power', label: 'Power', hint: 'Running power from a Stryd or the treadmill' },
+		{ kind: 'treadmill', label: 'Treadmill', hint: 'Speed, incline, distance and time as ANT+ fitness equipment' }
+	];
+	protected readonly renumbering = signal(false);
 	protected readonly transportLabel = computed(() => ({ wifi: 'Wi-Fi', ble: 'Bluetooth', simulated: 'Simulated' })[this.treadmill()?.transport ?? 'wifi']);
 	protected readonly speedScale = computed(() => (this.form()?.metric ? 22 : 14));
 
@@ -189,6 +229,73 @@ export class SettingsComponent implements OnInit {
 	});
 	protected readonly bluetooth = computed(() => this.socket.status()?.sensors?.bluetooth ?? null);
 	protected readonly busy = signal<string | null>(null);
+	// Ticks every 5 s so "seen 40 s ago" stays current between status pushes.
+	private readonly now = signal(Date.now());
+
+	// Every ANT+ device Zwifit knows is in range: the ones heard now (one per kind; the stick locks
+	// onto the first it hears) and everything the last scan found. A scan is the only way to see them
+	// all, since it needs the whole stick.
+	protected readonly antInRange = computed<AntInRangeRow[]>(() => {
+		const ant = this.ant();
+		const now = this.now();
+		const names = this.socket.settings()?.sensors?.names ?? {};
+		const rows = new Map<string, { id: string; name: string; kinds: SensorKind[]; values: Partial<Record<SensorKind, number>>; battery?: string; rssi: number | null; heardAt?: string; foundAt?: string; inUse: boolean }>();
+		const row = (id: string) => {
+			if (!rows.has(id)) {
+				rows.set(id, { id, name: '', kinds: [], values: {}, rssi: null, inUse: false });
+			}
+			return rows.get(id)!;
+		};
+		for (const d of ant?.devices ?? []) {
+			const r = row(String(d.deviceId));
+			if (!r.kinds.includes(d.kind)) {
+				r.kinds.push(d.kind);
+			}
+			const fresh = Date.parse(d.lastSeenAt) > now - 10000;
+			if (fresh) {
+				r.values[d.kind] = d.value;
+			}
+			r.inUse = r.inUse || fresh;
+			r.name = r.name || d.manufacturer || '';
+			r.battery = r.battery || d.battery;
+			r.heardAt = !r.heardAt || d.lastSeenAt > r.heardAt ? d.lastSeenAt : r.heardAt;
+		}
+		for (const f of ant?.found ?? []) {
+			const r = row(f.id);
+			f.kinds.forEach(k => { if (!r.kinds.includes(k)) { r.kinds.push(k); } });
+			r.values = { ...f.values, ...r.values };
+			r.rssi = f.rssi;
+			r.name = r.name || f.manufacturer || '';
+			r.battery = r.battery || f.battery;
+			r.foundAt = f.lastSeenAt ?? ant?.scan?.lastAt;
+		}
+		return [...rows.values()]
+			.map(r => {
+				const kinds = KIND_ORDER.filter(k => r.kinds.includes(k));
+				const parts = [`Device ${r.id}`];
+				if (r.battery) {
+					parts.push(`battery ${r.battery}`);
+				}
+				if (r.rssi !== null) {
+					parts.push(`signal ${r.rssi} dBm`);
+				}
+				return {
+					id: r.id,
+					name: names[`ant:${r.id}`] || r.name || defaultName(kinds),
+					kinds: kinds.map(k => KIND_LABEL[k]).join(' + '),
+					reading: kinds.filter(k => r.values[k] !== undefined).map(k => `${r.values[k]} ${UNIT[k]}`).join(' · ') || '–',
+					detail: parts.join(' · '),
+					status: r.inUse ? 'In use' : r.heardAt && (!r.foundAt || r.heardAt > r.foundAt) ? `Heard ${ago(r.heardAt, now)}` : `Found ${ago(r.foundAt, now)}`,
+					inUse: r.inUse,
+					rssi: r.rssi
+				};
+			})
+			.sort((a, b) => Number(b.inUse) - Number(a.inUse) || (b.rssi ?? -999) - (a.rssi ?? -999));
+	});
+	protected readonly antLastScan = computed(() => {
+		const at = this.ant()?.scan?.lastAt;
+		return at ? ago(at, this.now()) : null;
+	});
 
 	// Every sensor worth showing: picked ones (even out of range), ones in use, ones heard in a scan.
 	protected readonly availableSensors = computed<SensorEntry[]>(() => {
@@ -256,13 +363,16 @@ export class SettingsComponent implements OnInit {
 			merge(entry('bluetooth', f.id, blank), f);
 		}
 
+		const names = settings?.names ?? {};
 		return [...entries.values()]
-			.map(e => ({ ...e, kinds: KIND_ORDER.filter(k => e.kinds.includes(k)), name: e.name || defaultName(e.kinds) }))
+			.map(e => ({ ...e, kinds: KIND_ORDER.filter(k => e.kinds.includes(k)), name: names[e.key] || e.name || defaultName(e.kinds) }))
 			.sort((a, b) => STATE_ORDER[a.state] - STATE_ORDER[b.state] || (b.rssi ?? -999) - (a.rssi ?? -999));
 	});
 	private loadedFrom: Settings | null = null;
 
 	constructor() {
+		const tick = setInterval(() => this.now.set(Date.now()), 5000);
+		inject(DestroyRef).onDestroy(() => clearInterval(tick));
 		// Fill the form when settings first arrive (and after saves from any device), unless editing.
 		effect(() => {
 			const s = this.socket.settings();
@@ -297,6 +407,7 @@ export class SettingsComponent implements OnInit {
 			rsc: s.broadcast.rsc,
 			hr: s.broadcast.hr !== false,
 			ant: s.sensors?.ant !== false,
+			bluetoothWithZwift: !!s.sensors?.bluetoothWithZwift,
 			// "sensor" (ANT+ or Bluetooth, an older choice) shows as Auto, which also prefers a sensor.
 			hrSource: s.sensors?.hrSource === 'sensor' ? 'auto' : s.sensors?.hrSource ?? 'auto',
 			cadenceSource: s.sensors?.cadenceSource === 'sensor' ? 'auto' : s.sensors?.cadenceSource ?? 'auto',
@@ -306,6 +417,13 @@ export class SettingsComponent implements OnInit {
 			weightKg: s.sensors?.weightKg ?? null,
 			ftmsPower: !!s.broadcast.ftmsPower,
 			powerMeter: !!s.broadcast.power,
+			antBroadcast: !!s.antBroadcast?.enabled,
+			antFootpod: s.antBroadcast?.footpod !== false,
+			antHr: s.antBroadcast?.hr !== false,
+			antPower: s.antBroadcast?.power !== false,
+			antTreadmill: s.antBroadcast?.treadmill !== false,
+			antRebroadcastHr: !!s.antBroadcast?.rebroadcastAnt?.hr,
+			antRebroadcastPower: !!s.antBroadcast?.rebroadcastAnt?.power,
 			port: s.server.port,
 			host: s.server.host
 		};
@@ -402,6 +520,31 @@ export class SettingsComponent implements OnInit {
 		}
 	}
 
+	// Renaming a sensor in place: which one ("ant:4242"), and the name being typed.
+	protected readonly renamingSensor = signal<string | null>(null);
+	protected sensorNameDraft = '';
+
+	protected startSensorRename(transport: Transport, id: string, current: string): void {
+		this.renamingSensor.set(`${transport}:${id}`);
+		const custom = this.socket.settings()?.sensors?.names?.[`${transport}:${id}`];
+		this.sensorNameDraft = custom ?? current;
+	}
+
+	protected cancelSensorRename(): void {
+		this.renamingSensor.set(null);
+	}
+
+	// Saves the typed name; an empty one goes back to the sensor's own name.
+	protected async saveSensorRename(transport: Transport, id: string): Promise<void> {
+		try {
+			await this.socket.request('sensors:rename', { transport, id, name: this.sensorNameDraft.slice(0, 40) });
+			this.renamingSensor.set(null);
+		}
+		catch (err) {
+			this.toast.error(err);
+		}
+	}
+
 	protected async forgetSensor(s: SensorEntry): Promise<void> {
 		this.busy.set(s.key);
 		try {
@@ -443,10 +586,14 @@ export class SettingsComponent implements OnInit {
 			cooldownKph: kph(f.cooldown),
 			broadcast: { ftms: f.ftms, rsc: f.rsc, hr: f.hr, ftmsPower: f.ftmsPower, power: f.powerMeter },
 			sensors: {
-				ant: f.ant, hrSource: f.hrSource, cadenceSource: f.cadenceSource, powerSource: f.powerSource,
+				ant: f.ant, bluetoothWithZwift: f.bluetoothWithZwift, hrSource: f.hrSource, cadenceSource: f.cadenceSource, powerSource: f.powerSource,
 				powerSmoothing: Number(f.powerSmoothing),
 				thresholdPower: blankToNull(f.thresholdPower, true),
 				weightKg: blankToNull(f.weightKg)
+			},
+			antBroadcast: {
+				enabled: f.antBroadcast, footpod: f.antFootpod, hr: f.antHr, power: f.antPower, treadmill: f.antTreadmill,
+				rebroadcastAnt: { hr: f.antRebroadcastHr, power: f.antRebroadcastPower }
 			},
 			server: { port: Number(f.port), host: f.host }
 		};
@@ -465,6 +612,51 @@ export class SettingsComponent implements OnInit {
 		}
 		finally {
 			this.saving.set(false);
+		}
+	}
+
+	// Labels and helpers for the ANT+ broadcast card.
+	protected antBroadcastPill(): { tone: 'ok' | 'warn' | 'idle'; label: string } {
+		const b = this.antBroadcast();
+		switch (b?.state) {
+			case 'broadcasting': return { tone: 'ok', label: 'Broadcasting' };
+			case 'starting': return { tone: 'idle', label: 'Starting…' };
+			case 'paused': return { tone: 'warn', label: 'Paused' };
+			case 'error': return { tone: 'warn', label: 'Not broadcasting' };
+			default: return { tone: 'idle', label: 'Off' };
+		}
+	}
+
+	protected antKindSwitch(f: Form, kind: AntBroadcastKind): boolean {
+		return { footpod: f.antFootpod, hr: f.antHr, power: f.antPower, treadmill: f.antTreadmill }[kind];
+	}
+
+	protected toggleAntKind(f: Form, kind: AntBroadcastKind): void {
+		if (kind === 'footpod') { f.antFootpod = !f.antFootpod; }
+		if (kind === 'hr') { f.antHr = !f.antHr; }
+		if (kind === 'power') { f.antPower = !f.antPower; }
+		if (kind === 'treadmill') { f.antTreadmill = !f.antTreadmill; }
+	}
+
+	protected antSensor(kind: AntBroadcastKind) {
+		return this.antBroadcast()?.sensors.find(s => s.kind === kind) ?? null;
+	}
+
+	// New ANT+ device numbers: every watch or head unit has to pair with Zwifit again.
+	protected async renumberAnt(): Promise<void> {
+		if (!confirm('Give Zwifit new ANT+ device numbers? Watches and head units paired with it will need to pair again.')) {
+			return;
+		}
+		this.renumbering.set(true);
+		try {
+			await this.socket.request('ant-broadcast:renumber', {});
+			this.toast.show('New ANT+ device numbers. Pair your watch or head unit with Zwifit again.');
+		}
+		catch (err) {
+			this.toast.error(err);
+		}
+		finally {
+			this.renumbering.set(false);
 		}
 	}
 

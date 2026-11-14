@@ -65,7 +65,7 @@ function weekStart(date: Date): number {
 							<span class="run__main">
 								<strong class="run__name">{{ w.planName }}</strong>
 								<span class="run__when">{{ w.startedAt | date: 'EEEE d MMMM · HH:mm' }} · {{ w.endReason ? reasons[w.endReason] : 'in progress' }}</span>
-								<span class="run__stats num">{{ prefs.duration(w.totals.seconds) }} · {{ prefs.distance(w.totals.metres) }} {{ prefs.distanceLabel() }}@if (w.totals.avgHr) { · {{ w.totals.avgHr }} bpm avg}@if (w.totals.avgPower) { · {{ w.totals.avgPower }} W}</span>
+								<span class="run__stats num">{{ prefs.duration(w.totals.seconds) }} · {{ prefs.distance(w.totals.metres) }} {{ prefs.distanceLabel() }}@if (w.totals.climbMetres) { · ↑ {{ prefs.height(w.totals.climbMetres) }} {{ prefs.heightLabel() }}}@if (w.totals.avgHr) { · {{ w.totals.avgHr }} bpm avg}@if (w.totals.avgPower) { · {{ w.totals.avgPower }} W}</span>
 							</span>
 							<span class="run__badges">
 								@if (w.totals.avgHr) { <span class="run__dot run__dot--hr" title="Heart rate"></span> }

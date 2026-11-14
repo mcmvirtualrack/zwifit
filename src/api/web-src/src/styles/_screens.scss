@@ -229,12 +229,27 @@
 }
 
 .live__zone {
-	fill: var(--hr);
-	fill-opacity: 0.04;
+	fill-opacity: 0.07;
 }
 
-.live__zone--4 {
-	fill-opacity: 0.07;
+// Heart-rate zone colours: the line's gradient stops, the lane's bands, the live tag, text and bars.
+@for $z from 1 through 5 {
+	.zstop--#{$z} {
+		stop-color: var(--z#{$z});
+	}
+
+	.live__zone--#{$z} {
+		fill: var(--z#{$z});
+	}
+
+	.zone-text--#{$z} {
+		color: var(--z#{$z});
+		font-weight: 700;
+	}
+
+	.zones__fill--Z#{$z} {
+		background: var(--z#{$z});
+	}
 }
 
 .live__threshold {
@@ -361,6 +376,13 @@
 .live__tag--hr {
 	--tag: var(--hr);
 	--tag-ink: var(--hr-contrast);
+}
+
+@for $z from 1 through 5 {
+	.live__tag--z#{$z} {
+		--tag: var(--z#{$z});
+		--tag-ink: var(--z-contrast);
+	}
 }
 
 .live__tag--cadence {
@@ -560,6 +582,8 @@
 .zones__row {
 	display: grid;
 	grid-template-columns: 34px minmax(0, 1fr) 60px;
+	grid-auto-flow: column;
+	grid-auto-columns: 40px;
 	align-items: center;
 	gap: 10px;
 }
@@ -571,7 +595,8 @@
 	color: var(--text-soft);
 }
 
-.zones__time {
+.zones__time,
+.zones__pct {
 	text-align: right;
 	font-weight: 500;
 }
@@ -588,24 +613,8 @@
 	display: block;
 	height: 100%;
 	border-radius: 4px;
-	background: var(--hr);
 }
 
-.zones__fill--Z1 {
-	opacity: 0.35;
-}
-
-.zones__fill--Z2 {
-	opacity: 0.5;
-}
-
-.zones__fill--Z3 {
-	opacity: 0.7;
-}
-
-.zones__fill--Z4 {
-	opacity: 0.85;
-}
 
 // Zwift devices (Settings → Zwift broadcast): dot, name + detail, actions.
 .zdev {
@@ -1233,6 +1242,10 @@
 
 .wchart__line--power {
 	stroke: var(--power);
+}
+
+.wchart__line--incline {
+	stroke: var(--incline);
 }
 
 .wchart__cross {
@@ -2436,4 +2449,22 @@
 
 .terminal__empty {
 	color: #6f7f8f;
+}
+
+// Custom program editor: weeks × Mon–Sun, a plan (or Rest) per day.
+.program-grid th[scope='row'] {
+	white-space: nowrap;
+}
+
+.program-grid__cell {
+	min-width: 7.5rem;
+	width: 100%;
+}
+
+.program-grid__cell--rest {
+	color: var(--text-muted);
+}
+
+.program-grid__actions {
+	white-space: nowrap;
 }

@@ -9,7 +9,7 @@ const { createApp } = require('../../../src/app');
 const log = require('../../../src/lib/log');
 
 // Test apps start without the demo plan unless asked, so plan lists start empty.
-async function startApp({ legacyFiles = {}, settings, demoPlan = false, restart } = {}) {
+async function startApp({ legacyFiles = {}, settings, demoPlan = false, restart, ant } = {}) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zwifit-app-'));
 	const dataDir = path.join(root, 'data');
 	const legacyDir = path.join(root, 'repo');
@@ -24,7 +24,7 @@ async function startApp({ legacyFiles = {}, settings, demoPlan = false, restart 
 	const logLines = [];
 	log.setSink((level, text) => logLines.push({ level, text }));
 	const printed = [];
-	const app = await createApp({ dataDir, legacyDir, simulate: true, disableBroadcast: true, disableSensors: true, demoPlan, printCode: code => printed.push(code), port: 0, host: '127.0.0.1', restart });
+	const app = await createApp({ dataDir, legacyDir, simulate: true, disableBroadcast: true, disableSensors: true, demoPlan, printCode: code => printed.push(code), port: 0, host: '127.0.0.1', restart, ant });
 	const { port } = await app.start();
 	const base = `http://127.0.0.1:${port}`;
 	const sockets = [];

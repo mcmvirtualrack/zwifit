@@ -75,6 +75,27 @@ test('update() is sent to Zwift at 5 Hz using the existing calculators, ramped',
 	expect(speedOf(ftmsPackets[ftmsPackets.length - 1])).toBe(10);
 });
 
+test('a measured belt speed goes to Zwift as is, from the first packet; a set speed is eased', async () => {
+	jest.useFakeTimers();
+	const bleno = fakeBleno();
+	broadcast = new BlenoBroadcast({ settings: settingsWith(true, false), bleno });
+	await broadcast.start();
+	const packets = [];
+	broadcast._gatt.services[0].characteristics[0].emit('subscribe', 'zwift', 20, buffer => packets.push(buffer));
+	const speedOf = buffer => buffer.readUInt16LE(2) / 100;
+	broadcast.update({ kph: 9.6, incline: 1, measuredSpeed: true });
+	jest.advanceTimersByTime(200);
+	expect(speedOf(packets.at(-1))).toBe(9.6);
+	broadcast.update({ kph: 10.3, incline: 1, measuredSpeed: true });
+	jest.advanceTimersByTime(200);
+	expect(speedOf(packets.at(-1))).toBe(10.3);
+	// The console's set speed jumps; it is eased toward 12 instead.
+	broadcast.update({ kph: 12, incline: 1, measuredSpeed: false });
+	jest.advanceTimersByTime(200);
+	expect(speedOf(packets.at(-1))).toBeGreaterThan(10.3);
+	expect(speedOf(packets.at(-1))).toBeLessThan(12);
+});
+
 test('Zwift connecting and leaving updates the client count', async () => {
 	const bleno = fakeBleno();
 	broadcast = new BlenoBroadcast({ settings: settingsWith(true, false), bleno });
@@ -265,4 +286,34 @@ test('power is not broadcast unless switched on', async () => {
 	broadcast = new BlenoBroadcast({ settings: settingsWith(true, true), bleno });
 	await broadcast.start();
 	expect(broadcast._gatt.services.map(s => s.uuid)).not.toContain('1818');
+});
+
+test('after another program resets the adapter, the broadcast forgets its clients and advertises again', async () => {
+	const bleno = fakeBleno();
+	broadcast = new BlenoBroadcast({ settings: settingsWith(true, false), bleno });
+	await broadcast.start();
+	await flush();
+	bleno.emit('accept', 'aa:bb:cc:dd:ee:ff', 64);
+	expect(broadcast.status().clients).toBe(1);
+	bleno.startAdvertising.mockClear();
+	broadcast.adapterReset(5);
+	broadcast.adapterReset(5);
+	await new Promise(resolve => setTimeout(resolve, 20));
+	expect(bleno.stopAdvertising).toHaveBeenCalled();
+	expect(bleno.startAdvertising).toHaveBeenCalledTimes(1);
+	expect(bleno.startAdvertising).toHaveBeenCalledWith('Zwifit', ['1826']);
+	expect(broadcast.status()).toMatchObject({ clients: 0, devices: [], advertising: true });
+});
+
+test('a reset after stop() does nothing', async () => {
+	const bleno = fakeBleno();
+	broadcast = new BlenoBroadcast({ settings: settingsWith(true, false), bleno });
+	await broadcast.start();
+	await flush();
+	broadcast.adapterReset(5);
+	await broadcast.stop();
+	broadcast = null;
+	bleno.startAdvertising.mockClear();
+	await new Promise(resolve => setTimeout(resolve, 20));
+	expect(bleno.startAdvertising).not.toHaveBeenCalled();
 });

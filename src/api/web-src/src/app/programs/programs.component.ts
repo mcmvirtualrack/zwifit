@@ -21,7 +21,7 @@ const MAX_TARGET = 36000;
 type PaceFrom = 'time' | 'easy';
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DEFAULT_WEEKS = 16;
-const PHASE_LABELS: Record<ProgramDay['phase'], string> = { base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper' };
+const PHASE_LABELS: Record<ProgramDay['phase'], string> = { base: 'Base', build: 'Build', peak: 'Peak', taper: 'Taper', custom: '' };
 
 // The Sunday `weeks` weeks from now, as YYYY-MM-DD (local date).
 function defaultRaceDate(weeks: number): string {
@@ -41,6 +41,7 @@ export const daySeconds = (day: ProgramDay) => expandPlan({ items: day.items } a
 	template: `
 		<div class="page-head">
 			<h1>Training programs</h1>
+			<a class="btn" routerLink="/programs/new/custom">Build your own</a>
 			<a class="btn" routerLink="/plans">Plans</a>
 		</div>
 
@@ -50,7 +51,7 @@ export const daySeconds = (day: ProgramDay) => expandPlan({ items: day.items } a
 					<li class="card program-card">
 						<div class="program-card__main">
 							<h2 class="plan-card__name"><a [routerLink]="['/programs', p.id]">{{ p.name }}</a></h2>
-							<div class="muted">Race {{ p.raceDate | date: 'EEE d MMM y' }}@if (p.targetSeconds) {<span> · {{ p.targetFrom === 'time' ? 'Target' : 'Trains for' }} {{ prefs.duration(p.targetSeconds) }}</span>} · {{ p.weeks }} weeks · {{ p.done }} of {{ p.runs }} runs done</div>
+							<div class="muted">@if (p.goal === 'custom') {Your own · from {{ p.startDate | date: 'EEE d MMM y' }}} @else {Race {{ p.raceDate | date: 'EEE d MMM y' }}}@if (p.targetSeconds) {<span> · {{ p.targetFrom === 'time' ? 'Target' : 'Trains for' }} {{ prefs.duration(p.targetSeconds) }}</span>} · {{ p.weeks }} weeks · {{ p.done }} of {{ p.runs }} runs done</div>
 							<div class="progress" role="progressbar" [attr.aria-valuenow]="p.done" aria-valuemin="0" [attr.aria-valuemax]="p.runs" [attr.aria-label]="p.name + ' progress'">
 								<span class="progress__bar" [style.width.%]="p.runs ? (p.done / p.runs) * 100 : 0"></span>
 							</div>
@@ -63,6 +64,7 @@ export const daySeconds = (day: ProgramDay) => expandPlan({ items: day.items } a
 
 		<section class="card stack" aria-labelledby="new-program-title">
 			<h2 class="card__title" id="new-program-title">New program</h2>
+			<p class="muted">Want to plan it yourself? <a routerLink="/programs/new/custom">Build your own program</a>: pick one of your interval plans for each day, week 1 to week 16 (or up to 52).</p>
 			<p class="muted">Pick a goal, race date and target finish time; Zwifit builds a week-by-week schedule of treadmill runs (easy, hills, intervals, tempo, long runs and a taper), each with its speeds and inclines. Start each day's run from the program.</p>
 			<div class="field">
 				<span class="field__label" id="goal-label">Goal</span>

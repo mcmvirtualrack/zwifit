@@ -258,6 +258,82 @@
             }
           ],
           "description": "Body weight for W/kg."
+        },
+        "names": {
+          "type": "object",
+          "description": "Your own names for sensors (sensors:rename), by \"ant:<device number>\" or \"bluetooth:<id>\". Shown instead of the maker or advertised name.",
+          "maxProperties": 64,
+          "propertyNames": {
+            "pattern": "^(ant|bluetooth):[0-9A-Za-z:_-]{1,64}$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          }
+        },
+        "bluetoothWithZwift": {
+          "type": "boolean",
+          "description": "Use Bluetooth sensors even though they share the Bluetooth adapter with the Zwift broadcast (each connection drops Zwift briefly). Missing means off."
+        }
+      }
+    },
+    "antBroadcast": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "ANT+ broadcast (specs/003-ant-plus-broadcast). Missing means off.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Broadcast Zwifit as ANT+ sensors from the ANT+ stick. Missing means off."
+        },
+        "footpod": {
+          "type": "boolean",
+          "description": "As an ANT+ footpod: speed, distance, cadence. Missing means on."
+        },
+        "hr": {
+          "type": "boolean",
+          "description": "As an ANT+ heart rate monitor. Missing means on."
+        },
+        "power": {
+          "type": "boolean",
+          "description": "As an ANT+ power meter. Missing means on."
+        },
+        "treadmill": {
+          "type": "boolean",
+          "description": "As ANT+ fitness equipment (treadmill): speed, incline, distance, time. Missing means on."
+        },
+        "rebroadcastAnt": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Also rebroadcast heart rate or power that already comes from an ANT+ sensor. Missing means off.",
+          "properties": {
+            "hr": {
+              "type": "boolean"
+            },
+            "power": {
+              "type": "boolean"
+            }
+          }
+        },
+        "deviceNumbers": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "ANT+ device numbers receivers pair with; changed only by ant-broadcast:renumber.",
+          "properties": {
+            "footpod": {
+              "$ref": "#/$defs/antBroadcastNumber"
+            },
+            "hr": {
+              "$ref": "#/$defs/antBroadcastNumber"
+            },
+            "power": {
+              "$ref": "#/$defs/antBroadcastNumber"
+            },
+            "treadmill": {
+              "$ref": "#/$defs/antBroadcastNumber"
+            }
+          }
         }
       }
     },
@@ -396,6 +472,11 @@
           "maximum": 40
         }
       }
+    },
+    "antBroadcastNumber": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
     }
   }
 }

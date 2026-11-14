@@ -63,3 +63,18 @@ test('a Bluetooth sensor is remembered once and can be forgotten', async () => {
 	expect(settingsRepo.get().sensors.bluetooth).toEqual([]);
 	expect(() => call('sensors:connect', { transport: 'bluetooth', id: 'bad id!' })).toThrow(expect.objectContaining({ code: 'INVALID' }));
 });
+
+test('a sensor can be given its own name; a blank name clears it, and a settings save keeps it', async () => {
+	const { call, settingsRepo, server } = await setup();
+	expect(await call('sensors:rename', { transport: 'ant', id: '4242', name: '  My   Epix ' })).toEqual({ transport: 'ant', id: '4242', name: 'My Epix' });
+	await call('sensors:rename', { transport: 'bluetooth', id: 'aa01', name: 'Chest strap' });
+	expect(settingsRepo.get().sensors.names).toEqual({ 'ant:4242': 'My Epix', 'bluetooth:aa01': 'Chest strap' });
+	expect(server.io.emit).toHaveBeenCalledWith('settings', expect.objectContaining({ sensors: expect.objectContaining({ names: expect.any(Object) }) }));
+	// Saving the Settings form (which doesn't send names) leaves them alone.
+	await settingsRepo.update({ sensors: { powerSmoothing: 10 } });
+	expect(settingsRepo.get().sensors.names['ant:4242']).toBe('My Epix');
+	expect(await call('sensors:rename', { transport: 'ant', id: '4242', name: '   ' })).toMatchObject({ name: null });
+	expect(settingsRepo.get().sensors.names).toEqual({ 'bluetooth:aa01': 'Chest strap' });
+	expect(() => call('sensors:rename', { transport: 'ant', id: '4242', name: 'x'.repeat(41) })).toThrow(expect.objectContaining({ code: 'INVALID' }));
+	expect(() => call('sensors:rename', { transport: 'ant', id: 'bad id', name: 'x' })).toThrow(expect.objectContaining({ code: 'INVALID' }));
+});

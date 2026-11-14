@@ -103,8 +103,11 @@ function release(stick) {
 }
 
 class AntSensors extends EventEmitter {
-	constructor({ loadAnt = () => require('ant-plus-next'), loadUsb = () => require('usb').usb, getSettings = () => ({}), wsl, now = Date.now, retryMs = RETRY_MS, openTimeoutMs = OPEN_TIMEOUT_MS, scanMs = SCAN_MS, reattachMs = REATTACH_MS } = {}) {
+	constructor({ loadAnt = () => require('ant-plus-next'), loadUsb = () => require('usb').usb, getSettings = () => ({}), wsl, now = Date.now, retryMs = RETRY_MS, openTimeoutMs = OPEN_TIMEOUT_MS, scanMs = SCAN_MS, reattachMs = REATTACH_MS, listen = true } = {}) {
 		super();
+		// Whether to attach the receive channels (0–2). False when the stick is only opened for
+		// the ANT+ broadcast (specs/003); read on every open so a change applies on the next one.
+		this._listen = typeof listen === 'function' ? listen : () => listen;
 		this._reattachMs = reattachMs;
 		this._reattachTimers = new Set();
 		this._loadAnt = loadAnt;
@@ -121,8 +124,10 @@ class AntSensors extends EventEmitter {
 		this._opening = false;
 		this._scan = null;
 		this._scanReason = null;
-		// Sensors heard in the last scan, by device number: { id, kinds, values, rssi, manufacturer }
+		// Sensors heard in the last scan, by device number: { id, kinds, values, rssi, manufacturer, at }
 		this._found = new Map();
+		// When the last scan started (ms), for "found 2 min ago" in the list of ANT+ devices in range.
+		this._lastScanAt = null;
 		// Latest reading per kind: { value, deviceId, at }
 		this._latest = { hr: null, cadence: null, power: null };
 		this._status = { available: false, reason: 'Starting ANT+…' };
@@ -135,12 +140,25 @@ class AntSensors extends EventEmitter {
 			.filter(([, r]) => r)
 			.map(([kind, r]) => ({ kind, deviceId: r.deviceId, value: r.value, lastSeenAt: new Date(r.at).toISOString(), ...this._about.get(r.deviceId) }));
 		const found = [...this._found.values()]
-			.map(f => ({ id: String(f.id), kinds: [...f.kinds], values: { ...f.values }, rssi: f.rssi, manufacturer: f.manufacturer, ...(this._about.get(f.id)?.battery ? { battery: this._about.get(f.id).battery } : {}) }))
+			.map(f => ({ id: String(f.id), kinds: [...f.kinds], values: { ...f.values }, rssi: f.rssi, manufacturer: f.manufacturer, lastSeenAt: new Date(f.at).toISOString(), ...(this._about.get(f.id)?.battery ? { battery: this._about.get(f.id).battery } : {}) }))
 			.sort((a, b) => (b.rssi ?? -999) - (a.rssi ?? -999));
 		const scan = this._scan
 			? { active: true, endsAt: new Date(this._scan.endsAt).toISOString() }
 			: { active: false, ...(this._scanReason ? { reason: this._scanReason } : {}) };
+		if (this._lastScanAt !== null) {
+			scan.lastAt = new Date(this._lastScanAt).toISOString();
+		}
 		return { ...this._status, devices, scan, found };
+	}
+
+	// The stick, shared with the ANT+ broadcast: 'stick' (stick) is emitted after it opens and
+	// 'stick-lost' (stick) before it is let go (stop, unplug, scan, reconnect).
+	stickReady() {
+		return !!this._stick;
+	}
+
+	currentStick() {
+		return this._stick;
 	}
 
 	latest(kind) {
@@ -207,6 +225,7 @@ class AntSensors extends EventEmitter {
 		this._scan = { endsAt: this._now() + this._scanMs, finish: () => { clearTimeout(timer); finish(); } };
 		this._scanReason = null;
 		this._found = new Map();
+		this._lastScanAt = this._now();
 		this._scan.done = this._runScan(ended);
 		this.emit('status', this.status());
 		return { endsAt: this._scan.endsAt, done: this._scan.done };
@@ -265,6 +284,7 @@ class AntSensors extends EventEmitter {
 		if (MANUFACTURERS[data.ManId]) {
 			entry.manufacturer = MANUFACTURERS[data.ManId];
 		}
+		entry.at = this._now();
 		this._learn(data);
 		this._found.set(id, entry);
 		const current = this._latest[c.kind];
@@ -347,14 +367,16 @@ class AntSensors extends EventEmitter {
 			stick.on('shutdown', () => {
 				if (this._stick === stick) {
 					this._stick = null;
+					this.emit('stick-lost', stick);
 					this._set({ available: false, reason: 'The ANT+ stick was removed. Looking for it again…' });
 				}
 			});
 			const chosen = this.chosen();
+			const listen = this._listen() !== false;
 			try {
 				// deviceId 0 = the first sensor of that type in range. (The sensors' own method is
 				// attach(channel, deviceId); attachSensor() is the low-level one with a channel type.)
-				await Promise.all(CHANNELS.map(c => {
+				await Promise.all((listen ? CHANNELS : []).map(c => {
 					const sensor = new ant[c.sensor](stick);
 					sensor.on(c.event, data => {
 						this._learn(data);
@@ -372,6 +394,7 @@ class AntSensors extends EventEmitter {
 			this._stick = stick;
 			this._watch(stick);
 			this._set({ available: true });
+			this.emit('stick', stick);
 		}
 		catch (err) {
 			// e.g. the stick vanished mid-open while usbipd re-attaches it; the retry timer tries again.
@@ -413,6 +436,7 @@ class AntSensors extends EventEmitter {
 			return;
 		}
 		this._stick = null;
+		this.emit('stick-lost', stick);
 		release(stick);
 		this._set({ available: false, reason: 'The ANT+ stick disconnected. Reconnecting…' });
 	}
@@ -452,6 +476,7 @@ class AntSensors extends EventEmitter {
 		const stick = this._stick;
 		this._stick = null;
 		if (stick) {
+			this.emit('stick-lost', stick);
 			release(stick);
 		}
 	}

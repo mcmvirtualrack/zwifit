@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { SensorSource } from '../core/api.types';
 import { HrHistoryService, HrSample } from '../core/hr-history.service';
 import { PlanProfileService } from '../core/plan-profile.service';
-import { PrefsService, zoneOf } from '../core/prefs.service';
+import { PrefsService, timeInZones } from '../core/prefs.service';
 import { SocketService } from '../core/socket.service';
 import { ToastService } from '../core/toast.service';
 import { displaySpeed, fromDisplaySpeed } from '../core/units';
@@ -67,13 +67,7 @@ export class ControlComponent {
 	protected readonly zones = computed(() => {
 		const samples = this.windowSamples();
 		const max = this.prefs.maxHr();
-		const seconds = [0, 0, 0, 0, 0];
-		for (let i = 0; i < samples.length - 1; i++) {
-			const bpm = samples[i].bpm;
-			if (bpm) {
-				seconds[zoneOf(bpm, max) - 1] += Math.min(MAX_GAP_S, (samples[i + 1].t - samples[i].t) / 1000);
-			}
-		}
+		const seconds = timeInZones(samples, max, MAX_GAP_S);
 		const total = seconds.reduce((a, b) => a + b, 0) || 1;
 		return seconds.map((s, i) => ({ name: `Z${i + 1}`, seconds: Math.round(s), percent: Math.round((s / total) * 100) }));
 	});
@@ -115,6 +109,16 @@ export class ControlComponent {
 			const names = { hr: 'HRM', cadence: 'footpod', power: 'power' };
 			const kinds = [...new Set(ant.devices.filter(d => Date.parse(d.lastSeenAt) > Date.now() - 10000).map(d => names[d.kind]))];
 			pills.push({ label: `ANT+ · ${kinds.length ? kinds.join(' + ') : 'listening'}`, tone: kinds.length ? 'ok' : 'idle' });
+		}
+		// Zwifit as ANT+ sensors for a watch or head unit (specs/003); hidden while off.
+		const antOut = status.antBroadcast;
+		if (antOut && antOut.state !== 'off') {
+			const sending = antOut.sensors.filter(x => x.sending).map(x => `${x.kind} #${x.deviceNumber}`);
+			pills.push(antOut.state === 'broadcasting'
+				? { label: 'ANT+ broadcasting', tone: 'ok', title: sending.length ? `Sending as ${sending.join(', ')}.` : 'Nothing to send right now.' }
+				: antOut.state === 'starting'
+					? { label: 'ANT+ broadcast · starting', tone: 'idle' }
+					: { label: `ANT+ broadcast · ${antOut.state === 'paused' ? 'paused' : 'not broadcasting'}`, tone: 'warn', title: antOut.reason ?? undefined });
 		}
 		// Bluetooth sensors (strap, Stryd, footpod): only looked for once one is chosen in Settings.
 		const bleStatus = status.sensors?.bluetooth;
@@ -168,6 +172,10 @@ export class ControlComponent {
 	// Stop works whenever the treadmill is connected (it also ends a running plan). Start only
 	// where the treadmill can be restarted remotely, and never during a plan (use Resume there).
 	protected readonly canStop = computed(() => this.canControl());
+	// A run without a plan in progress (recorded for the history): Pause / Resume / Finish.
+	protected readonly freeRun = computed(() => this.socket.status()?.freeRun ?? { state: 'idle' as const });
+	protected readonly freeRunActive = computed(() => this.freeRun().state !== 'idle' && !this.planActive());
+	protected readonly canResumeHere = computed(() => !!this.treadmill()?.capabilities.canResume);
 	protected readonly canStart = computed(() => this.canControl() && !!this.treadmill()?.capabilities.canResume && !this.planActive());
 	protected readonly startHint = computed(() => {
 		const t = this.treadmill();
@@ -304,17 +312,27 @@ export class ControlComponent {
 		this.command('control:stop');
 	}
 
-	private send(target: { kph?: number; incline?: number }): Promise<void> {
-		return this.command('control:set', target);
+	// Ends the free run and saves it to the history (also stops the belt).
+	protected async finishRun(): Promise<void> {
+		if (await this.command('control:finish')) {
+			this.toast.show('Free run saved to the history.');
+		}
 	}
 
-	private async command(event: string, payload?: unknown): Promise<void> {
+	private async send(target: { kph?: number; incline?: number }): Promise<void> {
+		await this.command('control:set', target);
+	}
+
+	// True when the server accepted it; errors are shown as a toast.
+	private async command(event: string, payload?: unknown): Promise<boolean> {
 		this.busy.set(true);
 		try {
 			await this.socket.request(event, payload);
+			return true;
 		}
 		catch (err) {
 			this.toast.error(err);
+			return false;
 		}
 		finally {
 			this.busy.set(false);

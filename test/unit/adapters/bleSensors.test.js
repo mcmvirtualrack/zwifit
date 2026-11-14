@@ -140,3 +140,38 @@ test('the scan lease keeps scanning until its last holder lets go', () => {
 	expect(noble.stopScanning).toHaveBeenCalledTimes(1);
 	expect(scanLease(noble)).toBe(lease);
 });
+
+test('while blocked (sharing the adapter with the Zwift broadcast) noble is never loaded and scans are refused', async () => {
+	const loadNoble = jest.fn(fakeNoble);
+	let blocked = 'Off while Zwifit broadcasts to Zwift';
+	const settings = { sensors: { bluetooth: [{ id: 'aa01', name: 'Polar H10', kinds: ['hr'] }] } };
+	ble = new BleSensors({ loadNoble, getSettings: () => settings, blockedReason: () => blocked });
+	await ble.start();
+	expect(loadNoble).not.toHaveBeenCalled();
+	expect(ble.status()).toMatchObject({ available: false, reason: blocked });
+	expect(() => ble.startScan()).toThrow(expect.objectContaining({ code: 'SENSORS_UNAVAILABLE', message: blocked }));
+	ble.refresh();
+	expect(loadNoble).not.toHaveBeenCalled();
+	// Allowed in Settings: the saved sensor is looked for again.
+	blocked = null;
+	ble.refresh();
+	expect(loadNoble).toHaveBeenCalledTimes(1);
+	expect(ble.status()).toMatchObject({ available: true });
+});
+
+test('noble resetting the adapter is passed on as adapter-reset', async () => {
+	const noble = fakeNoble();
+	noble._bindings = { _hci: new EventEmitter() };
+	ble = new BleSensors({ loadNoble: () => noble, scanMs: 20 });
+	const resets = jest.fn();
+	ble.on('adapter-reset', resets);
+	await ble.start();
+	ble.startScan();
+	noble._bindings._hci.emit('reset');
+	noble.emit('stateChange', 'poweredOn');
+	expect(resets).toHaveBeenCalledTimes(2);
+	await ble.stop();
+	ble = null;
+	noble._bindings._hci.emit('reset');
+	expect(resets).toHaveBeenCalledTimes(2);
+});

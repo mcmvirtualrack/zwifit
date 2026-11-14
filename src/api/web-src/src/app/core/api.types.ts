@@ -60,12 +60,16 @@ export interface FoundSensor {
 	manufacturer?: string | null;
 	name?: string | null;
 	battery?: string;
+	// ANT+: when it was last heard in the scan.
+	lastSeenAt?: string;
 }
 
 export interface SensorScan {
 	active: boolean;
 	endsAt?: string;
 	reason?: string;
+	// ANT+: when the last scan started.
+	lastAt?: string;
 }
 
 export interface AntStatus {
@@ -85,10 +89,41 @@ export interface BluetoothSensorsStatus {
 	connections?: { id: string; name: string | null; kinds: SensorKind[]; state: 'connected' | 'connecting' | 'searching'; battery?: string }[];
 }
 
+export type AntBroadcastKind = 'footpod' | 'hr' | 'power' | 'treadmill';
+
+// Zwifit as ANT+ sensors, from the ANT+ stick (specs/003-ant-plus-broadcast).
+export interface AntBroadcastSettings {
+	enabled?: boolean;
+	footpod?: boolean;
+	hr?: boolean;
+	power?: boolean;
+	treadmill?: boolean;
+	rebroadcastAnt?: { hr?: boolean; power?: boolean };
+	// Read-only here: changed with ant-broadcast:renumber.
+	deviceNumbers?: Partial<Record<AntBroadcastKind, number>>;
+}
+
+export interface AntBroadcastStatus {
+	state: 'off' | 'starting' | 'broadcasting' | 'paused' | 'error';
+	reason?: string;
+	needsRestart?: boolean;
+	sensors: { kind: AntBroadcastKind; deviceNumber: number | null; sending: boolean; note?: string }[];
+}
+
 export interface Status {
 	treadmill: TreadmillStatus;
 	broadcast: BroadcastStatus;
 	sensors?: { ant: AntStatus; bluetooth?: BluetoothSensorsStatus };
+	antBroadcast?: AntBroadcastStatus;
+	freeRun?: FreeRunStatus;
+}
+
+// A run without a plan, recorded for the history (dashboard Pause / Resume / Finish).
+export interface FreeRunStatus {
+	state: 'idle' | 'running' | 'paused';
+	startedAt?: string;
+	seconds?: number;
+	metres?: number;
 }
 
 export interface Settings {
@@ -104,6 +139,8 @@ export interface Settings {
 	broadcast: { ftms: boolean; rsc: boolean; hr?: boolean; power?: boolean; ftmsPower?: boolean };
 	sensors?: {
 		ant?: boolean;
+		// Use Bluetooth sensors even on the adapter the Zwift broadcast uses (drops Zwift briefly).
+		bluetoothWithZwift?: boolean;
 		hrSource?: 'auto' | 'ant' | 'ble' | 'treadmill' | 'off' | 'sensor';
 		cadenceSource?: 'auto' | 'ant' | 'ble' | 'treadmill' | 'off' | 'sensor';
 		powerSource?: 'auto' | 'ant' | 'ble' | 'off';
@@ -112,7 +149,10 @@ export interface Settings {
 		weightKg?: number | null;
 		antDevices?: Partial<Record<SensorKind, number>>;
 		bluetooth?: { id: string; name: string | null; kinds: SensorKind[] }[];
+		// Your own names (sensors:rename), by "ant:<device number>" or "bluetooth:<id>".
+		names?: Record<string, string>;
 	};
+	antBroadcast?: AntBroadcastSettings;
 	server: { port: number; host: string; tls: unknown };
 }
 
@@ -212,14 +252,15 @@ export interface WorkoutSummary {
 	startedAt: string;
 	endedAt: string | null;
 	endReason: EndReason | null;
-	totals: { seconds: number; metres: number; avgHr?: number; maxHr?: number; avgCadence?: number; avgPower?: number; maxPower?: number };
+	// avgIncline / maxIncline (%) and climbMetres: only for runs where the belt was ever tilted.
+	totals: { seconds: number; metres: number; avgHr?: number; maxHr?: number; avgCadence?: number; avgPower?: number; maxPower?: number; avgIncline?: number; maxIncline?: number; climbMetres?: number };
 }
 
 export interface StepResult {
 	flatIndex: number;
 	label: string;
 	repetition: number;
-	target: { kph: number; incline: number };
+	target: { kph: number | null; incline: number | null };
 	actual: { avgKph: number; avgIncline: number };
 	seconds: number;
 	metres: number;
@@ -279,11 +320,13 @@ export interface ProgramDay {
 	week: number;
 	weekday: string;
 	type: string;
-	phase: 'base' | 'build' | 'peak' | 'taper';
+	phase: 'base' | 'build' | 'peak' | 'taper' | 'custom';
 	title: string;
 	description: string;
 	items: Plan['items'];
 	planId?: string;
+	// Custom programs: the plan this day was picked from (programs:createCustom).
+	sourcePlanId?: string;
 	done?: boolean;
 	workoutId?: string | null;
 }
@@ -291,9 +334,10 @@ export interface ProgramDay {
 export interface Program extends ProgramTarget {
 	id?: string;
 	name: string;
-	goal: ProgramGoal;
+	// 'custom': built week by week from your own plans (no race date).
+	goal: ProgramGoal | 'custom';
 	weeks: number;
-	raceDate: string;
+	raceDate: string | null;
 	startDate: string;
 	runDays: number[];
 	easyKph: number;
@@ -303,9 +347,9 @@ export interface Program extends ProgramTarget {
 export interface ProgramSummary extends ProgramTarget {
 	id: string;
 	name: string;
-	goal: ProgramGoal;
+	goal: ProgramGoal | 'custom';
 	weeks: number;
-	raceDate: string;
+	raceDate: string | null;
 	startDate: string;
 	runs: number;
 	done: number;

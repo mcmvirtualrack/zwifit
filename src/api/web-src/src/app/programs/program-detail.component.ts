@@ -19,9 +19,10 @@ type DayState = 'done' | 'missed' | 'today' | 'upcoming';
 			<div class="page-head">
 				<h1>{{ p.name }}</h1>
 				<a class="btn" routerLink="/programs">All programs</a>
+				@if (p.goal === 'custom') { <a class="btn" [routerLink]="['/programs', p.id, 'edit']">Edit</a> }
 				<button class="btn btn--ghost btn--danger-text" type="button" (click)="remove(p)">Delete</button>
 			</div>
-			<p class="muted">Race {{ p.raceDate | date: 'EEEE d MMMM y' }}@if (p.targetSeconds) {<span> · {{ p.targetFrom === 'time' ? 'Target' : 'Trains for' }} {{ prefs.duration(p.targetSeconds) }}</span>} · {{ p.weeks }} weeks from {{ p.startDate | date: 'd MMM' }} · {{ doneCount() }} of {{ p.days.length }} runs done</p>
+			<p class="muted">@if (p.goal === 'custom') {Your own program} @else {Race {{ p.raceDate | date: 'EEEE d MMMM y' }}}@if (p.targetSeconds) {<span> · {{ p.targetFrom === 'time' ? 'Target' : 'Trains for' }} {{ prefs.duration(p.targetSeconds) }}</span>} · {{ p.weeks }} weeks from {{ p.startDate | date: 'd MMM' }} · {{ doneCount() }} of {{ p.days.length }} runs done</p>
 			@if (planRunning()) {
 				<div class="banner banner--accent" role="status">A plan is running. <a routerLink="/workout">Open workout</a></div>
 			}
@@ -49,7 +50,7 @@ type DayState = 'done' | 'missed' | 'today' | 'upcoming';
 				<section class="card program-week" [attr.aria-labelledby]="'week-' + w.week">
 					<div class="row">
 						<h2 class="card__title" [id]="'week-' + w.week">Week {{ w.week }}</h2>
-						<span class="phase phase--{{ w.phase }}">{{ w.phase }}</span>
+						@if (w.phase !== 'custom') { <span class="phase phase--{{ w.phase }}">{{ w.phase }}</span> }
 						<span class="spacer"></span>
 						<span class="muted num">{{ prefs.duration(w.seconds) }}</span>
 					</div>

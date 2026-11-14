@@ -23,6 +23,38 @@ export function zoneOf(bpm: number, maxHr: number): number {
 	return zone;
 }
 
+// Seconds in each zone (index 0 = Z1). A sample's heart rate counts until the next sample; gaps
+// longer than maxGapS (a pause, a dropped sensor) count only maxGapS.
+export function timeInZones(points: { t: number; bpm: number | null | undefined }[], maxHr: number, maxGapS = 5): number[] {
+	const seconds = [0, 0, 0, 0, 0];
+	for (let i = 0; i < points.length - 1; i++) {
+		const bpm = points[i].bpm;
+		if (bpm && bpm > 0) {
+			seconds[zoneOf(bpm, maxHr) - 1] += Math.max(0, Math.min(maxGapS, (points[i + 1].t - points[i].t) / 1000));
+		}
+	}
+	return seconds;
+}
+
+// Gradient stops that colour a heart-rate line by zone: on a chart whose top edge is `top` bpm and
+// bottom edge `bottom` bpm, each zone's colour runs between that zone's limits (offsets 0..1 from
+// the top). Used with a userSpaceOnUse gradient spanning the chart's height.
+export function zoneStops(maxHr: number, top: number, bottom: number): { offset: number; zone: number }[] {
+	const span = top - bottom || 1;
+	const at = (bpm: number) => Math.min(1, Math.max(0, (top - bpm) / span));
+	const stops: { offset: number; zone: number }[] = [];
+	for (let zone = 5; zone >= 1; zone--) {
+		const upper = zone === 5 ? Infinity : ZONE_FLOORS[zone] * maxHr;
+		const lower = zone === 1 ? -Infinity : ZONE_FLOORS[zone - 1] * maxHr;
+		const from = at(upper);
+		const to = at(lower);
+		if (to > from) {
+			stops.push({ offset: from, zone }, { offset: to, zone });
+		}
+	}
+	return stops;
+}
+
 // Display units, threshold power and weight come from the server settings; the theme and maximum
 // heart rate are per-browser choices.
 @Injectable({ providedIn: 'root' })
@@ -83,6 +115,16 @@ export class PrefsService {
 
 	duration(seconds: number | null | undefined): string {
 		return units.formatDuration(seconds);
+	}
+
+	// Height climbed: metres, or feet in imperial.
+	readonly heightLabel = computed(() => (this.metric() ? 'm' : 'ft'));
+
+	height(metres: number | null | undefined): string {
+		if (metres === null || metres === undefined || !Number.isFinite(metres)) {
+			return '–';
+		}
+		return String(Math.round(this.metric() ? metres : metres * 3.28084));
 	}
 
 	setTheme(theme: Theme): void {

@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zwifit.local/schemas/ant-broadcast-renumber.json",
+  "title": "ant-broadcast:renumber payload",
+  "description": "New random ANT+ device numbers for every broadcast sensor. Takes no fields.",
+  "type": "object",
+  "additionalProperties": false
+}

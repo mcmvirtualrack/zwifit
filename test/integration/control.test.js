@@ -118,3 +118,19 @@ describe('settings:write (regression for the legacy unauthenticated fromJSON)', 
 		expect(ctx.app.settingsRepo.get().metric).toBe(false);
 	});
 });
+
+test('a free run: Stop pauses it, status shows it, Finish saves it to the history', async () => {
+	expect(await ctx.emit(client.socket, 'control:finish')).toMatchObject({ ok: false, error: 'NO_FREE_RUN' });
+	const running = ctx.next(client.socket, 'status', s => s.freeRun && s.freeRun.state === 'running');
+	ctx.app.treadmill.startBelt(8);
+	await running;
+	// Paused once the belt has slowed to a stop (the simulator takes a few seconds, like a real one).
+	const paused = ctx.next(client.socket, 'status', s => s.freeRun && s.freeRun.state === 'paused', 10000);
+	expect(await ctx.emit(client.socket, 'control:stop')).toEqual({ ok: true });
+	expect((await paused).freeRun).toMatchObject({ state: 'paused', startedAt: expect.any(String) });
+	const changed = ctx.next(client.socket, 'workouts:changed');
+	expect(await ctx.emit(client.socket, 'control:finish')).toEqual({ ok: true });
+	const { id } = await changed;
+	expect(ctx.app.workoutsRepo.get(id)).toMatchObject({ planName: 'Free run', planId: null, endReason: 'completed' });
+	expect(ctx.app.freeRun.status()).toEqual({ state: 'idle' });
+}, 20000);

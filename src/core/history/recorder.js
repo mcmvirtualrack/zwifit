@@ -17,12 +17,14 @@ function createRecorder({ repo, newId, now = () => Date.now(), onChanged = () =>
 
 	function onEvent(event) {
 		if (event.type === 'start') {
+			// A free run (core/history/freeRun.js) has no plan: plan null, name "Free run", and it
+			// started before it was long enough to save.
 			const header = {
 				id: newId(),
-				planId: event.plan.id || null,
-				planName: event.plan.name,
-				planSnapshot: event.plan,
-				startedAt: new Date(now()).toISOString(),
+				planId: (event.plan && event.plan.id) || null,
+				planName: event.plan ? event.plan.name : event.name,
+				planSnapshot: event.plan || null,
+				startedAt: event.startedAt || new Date(now()).toISOString(),
 				endedAt: null,
 				endReason: null,
 				totals: { seconds: 0, metres: 0 },
@@ -46,7 +48,8 @@ function createRecorder({ repo, newId, now = () => Date.now(), onChanged = () =>
 		}
 		else if (event.type === 'end') {
 			const current = workout;
-			const endSample = { ...(last || { kph: 0, incline: 0, metres: 0, hr: null, flatIndex: event.flatIndex }), t: new Date(now()).toISOString(), event: 'end' };
+			// `at`: a free run ends when the belt stopped, not when the idle wait ran out.
+			const endSample = { ...(last || { kph: 0, incline: 0, metres: 0, hr: null, flatIndex: event.flatIndex }), t: event.at || new Date(now()).toISOString(), event: 'end' };
 			delete endSample.estimated;
 			samples.push(endSample);
 			const finished = { ...current, endedAt: endSample.t, endReason: event.reason, ...summarize(current, samples) };

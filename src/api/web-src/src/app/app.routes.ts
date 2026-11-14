@@ -9,6 +9,8 @@ export const routes: Routes = [
 	{ path: 'plans/new', loadComponent: () => import('./plans/plan-editor.component').then(m => m.PlanEditorComponent), title: 'Zwifit · New plan', canDeactivate: [confirmLeave] },
 	{ path: 'plans/:id', loadComponent: () => import('./plans/plan-editor.component').then(m => m.PlanEditorComponent), title: 'Zwifit · Edit plan', canDeactivate: [confirmLeave] },
 	{ path: 'programs', loadComponent: () => import('./programs/programs.component').then(m => m.ProgramsComponent), title: 'Zwifit · Training programs' },
+	{ path: 'programs/new/custom', loadComponent: () => import('./programs/program-editor.component').then(m => m.ProgramEditorComponent), title: 'Zwifit · Build a program' },
+	{ path: 'programs/:id/edit', loadComponent: () => import('./programs/program-editor.component').then(m => m.ProgramEditorComponent), title: 'Zwifit · Edit program' },
 	{ path: 'programs/:id', loadComponent: () => import('./programs/program-detail.component').then(m => m.ProgramDetailComponent), title: 'Zwifit · Training program' },
 	{ path: 'workout', loadComponent: () => import('./playback/playback.component').then(m => m.PlaybackComponent), title: 'Zwifit · Workout' },
 	{ path: 'history', loadComponent: () => import('./history/history-list.component').then(m => m.HistoryListComponent), title: 'Zwifit · History' },

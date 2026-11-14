@@ -183,3 +183,27 @@ describe('update', () => {
 		expect(view.treadmill.transport).toBe('wifi');
 	});
 });
+
+describe('antBroadcast defaults (specs/003)', () => {
+	test('a settings.json from before ANT+ broadcast loads with it off and every sensor ticked', async () => {
+		const old = clone(DEFAULT_SETTINGS);
+		delete old.antBroadcast;
+		fs.mkdirSync(dataDir, { recursive: true });
+		fs.writeFileSync(settingsFile(), JSON.stringify(old));
+		const repo = createSettingsRepo({ dir: dataDir, legacyDir });
+		await repo.init();
+		expect(repo.get().antBroadcast).toEqual(DEFAULT_SETTINGS.antBroadcast);
+		// A partial object keeps what it has and fills in the rest; device numbers survive.
+		fs.writeFileSync(settingsFile(), JSON.stringify({ ...old, antBroadcast: { enabled: true, hr: false, deviceNumbers: { footpod: 7 } } }));
+		await repo.init();
+		expect(repo.get().antBroadcast).toEqual({ ...DEFAULT_SETTINGS.antBroadcast, enabled: true, hr: false, deviceNumbers: { footpod: 7 } });
+	});
+
+	test('a paired device can switch it on, but cannot set device numbers', async () => {
+		const repo = createSettingsRepo({ dir: dataDir, legacyDir });
+		await repo.init();
+		expect((await repo.update({ antBroadcast: { enabled: true, rebroadcastAnt: { hr: true } } })).antBroadcast)
+			.toEqual({ ...DEFAULT_SETTINGS.antBroadcast, enabled: true, rebroadcastAnt: { hr: true, power: false } });
+		await expect(repo.update({ antBroadcast: { deviceNumbers: { hr: 5 } } })).rejects.toMatchObject({ code: 'INVALID_SETTINGS' });
+	});
+});

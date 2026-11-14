@@ -101,3 +101,33 @@ describe('target finish time', () => {
 		expect(JSON.stringify(tooFast)).toContain('TOO_FAST');
 	});
 });
+
+test('a custom program from your own plans: create, start a day, edit keeping its progress', async () => {
+	const step = (id, kph, seconds) => ({ kind: 'step', id, targetKph: kph, entered: { form: 'speed', unit: 'kph', value: kph }, targetIncline: 1, end: { type: 'time', seconds } });
+	const easy = await ctx.app.plansRepo.importPlan({ schemaVersion: 1, name: 'Easy 30', authoredUnits: 'metric', items: [step('a', 9, 1800)] });
+	const fast = await ctx.app.plansRepo.importPlan({ schemaVersion: 1, name: 'Fast 20', authoredUnits: 'metric', items: [step('b', 12, 1200)] });
+	const monday = isoIn(0);
+	const mine = { name: 'My 16 weeks', startDate: monday, weeks: 16, days: [{ week: 1, weekday: 0, planId: easy.id }, { week: 1, weekday: 3, planId: fast.id }, { week: 16, weekday: 6, planId: easy.id }] };
+	const created = await ctx.emit(client.socket, 'programs:createCustom', mine);
+	expect(created).toMatchObject({ ok: true, data: { goal: 'custom', weeks: 16, raceDate: null } });
+	const { id, days } = created.data;
+	expect(days.map(d => d.title)).toEqual(['Easy 30', 'Fast 20', 'Easy 30']);
+	expect((await ctx.emit(client.socket, 'programs:list')).data).toEqual([expect.objectContaining({ id, goal: 'custom', runs: 3, done: 0 })]);
+
+	// Starting the first day saves it as that day's own plan.
+	expect(await ctx.emit(client.socket, 'programs:start', { id, date: days[0].date })).toMatchObject({ ok: true });
+	await ctx.app.engine.stop();
+	const started = (await ctx.emit(client.socket, 'programs:get', { id })).data.days[0].planId;
+	expect(started).toEqual(expect.any(String));
+
+	// Edit: drop week 16, change week 1 Thursday; the started Monday keeps its saved plan.
+	const edited = await ctx.emit(client.socket, 'programs:updateCustom', { ...mine, id, days: [mine.days[0], { week: 1, weekday: 3, planId: easy.id }] });
+	expect(edited).toMatchObject({ ok: true, data: { id, days: [expect.objectContaining({ planId: started }), expect.objectContaining({ title: 'Easy 30' })] } });
+	expect(edited.data.days[1].planId).toBeUndefined();
+
+	// Refused: a plan that doesn't exist, editing a generated program, a day after the last week.
+	expect(await ctx.emit(client.socket, 'programs:createCustom', { ...mine, days: [{ week: 1, weekday: 0, planId: '01HZX3K9V7Q8R2M4N6P0S1T3WC' }] })).toMatchObject({ ok: false, error: 'NOT_FOUND' });
+	const generated = (await ctx.emit(client.socket, 'programs:create', input())).data;
+	expect(await ctx.emit(client.socket, 'programs:updateCustom', { ...mine, id: generated.id })).toMatchObject({ ok: false, error: 'INVALID' });
+	expect(await ctx.emit(client.socket, 'programs:createCustom', { ...mine, weeks: 2 })).toMatchObject({ ok: false, error: 'INVALID' });
+});

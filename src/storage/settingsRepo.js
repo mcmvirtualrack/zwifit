@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = Object.freeze({
 	cooldownKph: 3.2,
 	broadcast: { ftms: true, rsc: false, hr: true },
 	sensors: { ant: true, hrSource: 'auto', cadenceSource: 'auto', powerSource: 'auto' },
+	antBroadcast: { enabled: false, footpod: true, hr: true, power: true, treadmill: true, rebroadcastAnt: { hr: false, power: false } },
 	server: { port: 1337, host: '0.0.0.0', tls: null }
 });
 
@@ -118,6 +119,10 @@ function createSettingsRepo({ dir = paths.dataDir(), legacyDir = paths.legacyDir
 				source = 'defaults';
 			}
 			needsSave = true;
+		}
+		// Settings saved before ANT+ broadcast existed (or with only some of its fields) get its defaults.
+		if (isPlainObject(loaded) && (loaded.antBroadcast === undefined || isPlainObject(loaded.antBroadcast))) {
+			loaded.antBroadcast = merge(DEFAULT_SETTINGS.antBroadcast, loaded.antBroadcast || {});
 		}
 		const errors = validateSettings(loaded);
 		if (errors.length) {

@@ -83,7 +83,15 @@ describe('against a fake iFit console', () => {
 		await startAdapter();
 		const status = nextStatus();
 		sendValues({ KPH: '10.5', Incline: '2.5', 'Chest Pulse': '142', Cadence: '170' });
-		expect(await status).toEqual({ connected: true, kph: 10.5, incline: 2.5, hr: 142, cadence: 170, estimatedSpeed: false });
+		// Only "KPH" (the set speed) so far: Zwift gets it eased, not as a measured speed.
+		expect(await status).toEqual({ connected: true, kph: 10.5, incline: 2.5, hr: 142, cadence: 170, estimatedSpeed: false, speedSource: 'set' });
+	});
+
+	test('a console that reports "Current KPH" gives the measured belt speed', async () => {
+		await startAdapter();
+		const status = nextStatus();
+		sendValues({ KPH: '10.5', 'Current KPH': '10.2' });
+		expect(await status).toMatchObject({ kph: 10.2, speedSource: 'measured', estimatedSpeed: false });
 	});
 
 	test('MPH is converted to km/h', async () => {

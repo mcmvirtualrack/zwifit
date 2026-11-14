@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zwifit.local/schemas/sensors-rename.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "transport",
+    "id",
+    "name"
+  ],
+  "properties": {
+    "transport": {
+      "enum": [
+        "ant",
+        "bluetooth"
+      ]
+    },
+    "id": {
+      "$ref": "settings.json#/$defs/sensorId"
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 40,
+      "description": "Empty (or only spaces) goes back to the sensor's own name."
+    }
+  }
+}

@@ -41,6 +41,13 @@
 	--power-text: #5b33b0;
 	--power-contrast: #ffffff;
 	--incline: #2f63c9;
+	// Heart-rate zones: grey, blue, green, orange, red.
+	--z1: #6b7686;
+	--z2: #2f7fd6;
+	--z3: #1f9d55;
+	--z4: #d97400;
+	--z5: #d42a3c;
+	--z-contrast: #ffffff;
 	--focus: #1f5fd1;
 	--shadow: 0 1px 2px rgb(16 21 28 / 6%), 0 4px 16px rgb(16 21 28 / 6%);
 	--glass: rgb(255 255 255 / 80%);
@@ -110,6 +117,12 @@
 	--power-text: #cbb5ff;
 	--power-contrast: #1a0f33;
 	--incline: #8fb4ff;
+	--z1: #a3adbb;
+	--z2: #5aa7ff;
+	--z3: #3ecf7f;
+	--z4: #ffa23a;
+	--z5: #ff5c6c;
+	--z-contrast: #0a0f15;
 	--focus: #8ab4ff;
 	--shadow: none;
 	--glass: rgb(10 15 21 / 72%);

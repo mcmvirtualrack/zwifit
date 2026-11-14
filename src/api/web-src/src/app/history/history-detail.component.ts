@@ -2,7 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Workout } from '../core/api.types';
-import { PrefsService } from '../core/prefs.service';
+import { PrefsService, ZONE_FLOORS, timeInZones } from '../core/prefs.service';
 import { SocketService } from '../core/socket.service';
 import { ToastService } from '../core/toast.service';
 import { END_REASONS } from '../core/units';
@@ -34,10 +34,30 @@ import { WorkoutChartsComponent } from './workout-charts.component';
 				@if (w.totals.avgCadence) {
 					<app-stat-tile label="Avg cadence" [value]="'' + w.totals.avgCadence" unit="spm" variant="cadence" />
 				}
+				@if (w.totals.avgIncline !== undefined) {
+					<app-stat-tile label="Avg incline" [value]="'' + w.totals.avgIncline" unit="%" [sub]="'max ' + w.totals.maxIncline + ' %'" />
+					<app-stat-tile label="Climb" [value]="prefs.height(w.totals.climbMetres)" [unit]="prefs.heightLabel()" />
+				}
 				@if (w.totals.avgPower) {
 					<app-stat-tile label="Avg power" [value]="'' + w.totals.avgPower" unit="W" [sub]="'max ' + w.totals.maxPower + ' W'" variant="power" />
 				}
 			</div>
+			@if (zones(); as z) {
+				<section class="card zones" aria-labelledby="zones-title">
+					<h2 class="card__title" id="zones-title">Time in heart-rate zone</h2>
+					@for (row of z; track row.name) {
+						<div class="zones__row">
+							<span class="zones__name num">{{ row.name }}</span>
+							<span class="zones__track"><span [class]="'zones__fill zones__fill--' + row.name" [style.width.%]="row.percent"></span></span>
+							<span class="zones__time num">{{ prefs.duration(row.seconds) }}</span>
+							<span class="zones__pct num muted">{{ row.percent }}%</span>
+						</div>
+					}
+					<p class="field__hint">From a maximum heart rate of {{ prefs.maxHr() }} bpm (change it in Settings → Display): Z1 below {{ limits()[0] }}, Z2 {{ limits()[0] }}–{{ limits()[1] - 1 }}, Z3 {{ limits()[1] }}–{{ limits()[2] - 1 }}, Z4 {{ limits()[2] }}–{{ limits()[3] - 1 }}, Z5 {{ limits()[3] }}+ bpm.</p>
+				</section>
+			}
+			<!-- A free run (no plan) has no targets, so no steps table: the tiles and charts say it all. -->
+			@if (hasTargets()) {
 			<section class="card" aria-labelledby="steps-title">
 				<h2 id="steps-title" class="card__title">Steps · target vs actual</h2>
 				<div class="table-wrap">
@@ -71,6 +91,7 @@ import { WorkoutChartsComponent } from './workout-charts.component';
 					</table>
 				</div>
 			</section>
+			}
 			<app-workout-charts [samples]="samples()" />
 		}
 		@else {
@@ -87,6 +108,18 @@ export class HistoryDetailComponent implements OnInit {
 	protected readonly reasons = END_REASONS;
 	protected readonly workout = signal<Workout | null>(null);
 	protected readonly samples = signal<ChartSample[]>([]);
+	protected readonly hasTargets = computed(() => !!this.workout()?.steps.some(s => s.target.kph !== null));
+	// Time in each heart-rate zone over the whole workout; null when no heart rate was recorded.
+	protected readonly zones = computed(() => {
+		const points = this.samples().map(s => ({ t: Date.parse(s.t), bpm: s.hr }));
+		const seconds = timeInZones(points, this.prefs.maxHr());
+		const total = seconds.reduce((a, b) => a + b, 0);
+		if (!total) {
+			return null;
+		}
+		return seconds.map((sec, i) => ({ name: `Z${i + 1}`, seconds: Math.round(sec), percent: Math.round((sec / total) * 100) }));
+	});
+	protected readonly limits = computed(() => ZONE_FLOORS.slice(1).map(f => Math.ceil(f * this.prefs.maxHr())));
 	protected readonly hasCadence = computed(() => !!this.workout()?.steps.some(s => s.avgCadence));
 	protected readonly hasPower = computed(() => !!this.workout()?.steps.some(s => s.avgPower));
 

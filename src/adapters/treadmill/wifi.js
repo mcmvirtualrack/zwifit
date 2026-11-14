@@ -364,7 +364,10 @@ class WifiTreadmill extends EventEmitter {
 			kph: Math.round(kph * 100) / 100,
 			incline: this._state.incline,
 			hr: this._state.hr,
-			estimatedSpeed: estimated
+			estimatedSpeed: estimated,
+			// measured: the belt's real speed ("Current KPH/MPH"); set: the console's set speed
+			// ("KPH/MPH", it jumps to a new value at once); estimated: our last target (no speed sent).
+			speedSource: estimated ? 'estimated' : this._reportsCurrent ? 'measured' : 'set'
 		};
 		if (this._state.cadence !== null) {
 			status.cadence = this._state.cadence;

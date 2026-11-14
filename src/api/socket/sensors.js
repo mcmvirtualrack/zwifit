@@ -2,6 +2,8 @@
 //   status.sensors.<ant|bluetooth>.found. ANT+ pauses its sensors while it scans.
 // sensors:connect { transport, id } — uses that sensor from now on (remembered in settings).
 // sensors:forget { transport, id } — stops using it (ANT+ goes back to the first one in range).
+// sensors:rename { transport, id, name } — your own name for a sensor, shown instead of the maker or
+//   advertised name (settings.sensors.names); an empty name goes back to the sensor's own.
 // Paired devices only.
 const { AppError } = require('../../lib/errors');
 
@@ -48,6 +50,23 @@ function registerSensors({ server, ant = null, bluetooth = null, settingsRepo, l
 			bluetooth.refresh();
 		}
 		return sensor;
+	});
+
+	server.handle('sensors:rename', 'sensors-rename', async ({ payload }) => {
+		const names = { ...(settingsRepo.get().sensors || {}).names };
+		const key = `${payload.transport}:${payload.id}`;
+		const name = payload.name.replace(/\s+/g, ' ').trim();
+		if (name) {
+			if (!(key in names) && Object.keys(names).length >= 64) {
+				throw new AppError('LIMIT', 'Up to 64 sensors can have a name. Clear one first.');
+			}
+			names[key] = name;
+		}
+		else {
+			delete names[key];
+		}
+		await saveSensors({ names });
+		return { transport: payload.transport, id: payload.id, name: name || null };
 	});
 
 	server.handle('sensors:forget', 'sensors-forget', async ({ payload }) => {

@@ -1,4 +1,4 @@
-// Geometry for the workout charts (pace, heart rate, cadence, power over time or distance): stacked
+// Geometry for the workout charts (pace, heart rate, cadence, power, incline over time or distance): stacked
 // small multiples that share one x axis, each with its own y scale (never two scales on one chart).
 
 export interface ChartSample {
@@ -8,10 +8,11 @@ export interface ChartSample {
 	hr: number | null;
 	cadence?: number;
 	power?: number;
+	incline?: number;
 }
 
 export type XAxis = 'time' | 'distance';
-export type Metric = 'pace' | 'hr' | 'cadence' | 'power';
+export type Metric = 'pace' | 'hr' | 'cadence' | 'power' | 'incline';
 
 export interface Series {
 	metric: Metric;
@@ -24,7 +25,7 @@ export interface Series {
 export const CHART_W = 1000;
 export const CHART_H = 100;
 
-const SPAN_MIN: Record<Metric, number> = { pace: 60, hr: 20, cadence: 20, power: 40 };
+const SPAN_MIN: Record<Metric, number> = { pace: 60, hr: 20, cadence: 20, power: 40, incline: 2 };
 
 // x for each sample on 0..CHART_W, by elapsed seconds or by metres.
 export function xPositions(samples: ChartSample[], axis: XAxis): number[] {
@@ -48,6 +49,9 @@ export function valueOf(s: ChartSample, metric: Metric, metresPerUnit: number): 
 	}
 	if (metric === 'power') {
 		return s.power && s.power > 0 ? s.power : null;
+	}
+	if (metric === 'incline') {
+		return typeof s.incline === 'number' ? s.incline : null;
 	}
 	return s.cadence && s.cadence > 0 ? s.cadence : null;
 }

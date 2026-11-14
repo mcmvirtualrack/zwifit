@@ -98,9 +98,10 @@ AntStatus {
   available: boolean, reason?: string            // e.g. "No ANT+ USB stick found. Under WSL, run …"
   devices: [{ kind: "hr"|"cadence"|"power", deviceId: number, value, lastSeenAt,
               manufacturer?: "Garmin"|"Stryd"|…, battery?: "82%"|"good"|… }]   // latest per kind
-  scan:  { active: boolean, endsAt?: ISO time, reason?: string }
+  scan:  { active: boolean, endsAt?: ISO time, reason?: string, lastAt?: ISO time }  // lastAt: last scan's start
   found: [{ id: "31877", kinds: [...], values: { hr?, cadence?, power? }, rssi: number|null,
-            manufacturer: string|null, battery? }]   // heard in the last scan, strongest first
+            manufacturer: string|null, lastSeenAt: ISO time, battery? }]   // heard in the last scan
+            // (kept until the next one), strongest first
 }
 
 BluetoothSensorsStatus {

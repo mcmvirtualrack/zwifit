@@ -73,10 +73,13 @@ interface SensorSource extends EventEmitter      // AntSensors (src/adapters/sen
   startScan(): { endsAt }     // throws AppError SENSORS_UNAVAILABLE
   describe(id): { id, kinds, name }                // throws NOT_FOUND unless heard / in use
   AntSensors.reconnect()      // reopen the stick with settings.sensors.antDevices
+  AntSensors.stickReady()     // true while a stick is open (for the ANT+ broadcast)
   BleSensors.refresh()        // connect newly remembered, drop forgotten
   events:
     "reading" { kind, value, deviceId }
     "status"  status()
+    "stick"      (stick)  AntSensors: after a successful open (also after a scan reopens it)
+    "stick-lost" (stick)  AntSensors: before release (stop, unplug, scan start, reconnect)
 ```
 
 - **AntSensors**: one Garmin USB2/USB-m or USB3 stick; channels 0 heart rate, 1 stride-based speed
@@ -85,6 +88,8 @@ interface SensorSource extends EventEmitter      // AntSensors (src/adapters/sen
   channels. The stick is released without the library's USB reset (usbip under WSL). Stick loss
   (endpoint error or USB detach) is noticed and retried every 10 s. Manufacturer and battery come
   from the common data pages.
+  Option `listen` (boolean or function, default true): when false the stick is opened for the
+  ANT+ broadcast only and no receive channels are attached.
 - **BleSensors**: noble, loaded only when a Bluetooth scan or a remembered sensor needs it.
   Discovers peripherals advertising 0x180D / 0x1818 / 0x1814, connects only remembered ones,
   subscribes to 0x2A37 / 0x2A63 / 0x2A53, reads Battery Level 0x2A19 once. Missing remembered
@@ -98,6 +103,29 @@ interface SensorSource extends EventEmitter      // AntSensors (src/adapters/sen
 - **Scan lease** (`src/adapters/bleScanLease.js`): one Bluetooth scan shared by the BLE treadmill
   and BLE sensors (`acquire(owner)` / `release(owner)`; scanning with duplicates while anyone holds
   it and the adapter is on), so one never stops the other's search.
+
+## ANT+ broadcast (specs/003-ant-plus-broadcast)
+
+```text
+class AntBroadcast extends EventEmitter            // src/adapters/antBroadcast/index.js
+  constructor({ host, getSettings, saveDeviceNumbers, getLimits?, now?, randomInt? })
+  start(): Promise<void>      // never throws for missing hardware; status says why
+  stop(): Promise<void>       // closes and unassigns channels 3–6; the stick stays with host
+  update(mergedStatus): void  // latest values; encoded on the next EVENT_TX per channel
+  refresh(): void             // apply changed settings now (called after settings:write)
+  renumber(): Promise<{ footpod, hr, power, treadmill }>
+  status(): AntBroadcastStatus  // { state: off|starting|broadcasting|paused|error, reason?, needsRestart?, sensors[] }
+  events: "status" status() (on change only)
+```
+
+- `host` is the `AntSensors` instance (or null when no stick was opened at start: status
+  `error` with `needsRestart`). It transmits on channels 3 footpod (SDM, type 124), 4 heart rate
+  (type 120), 5 power (type 11) and 6 treadmill (FE, type 17) beside reception on 0–2; it
+  configures them on `'stick'` and drops state without writing on `'stick-lost'`.
+- Heart rate and power channels are open only while a value is present; values whose source is
+  ANT+ are skipped unless `antBroadcast.rebroadcastAnt` says otherwise. Inbound data on channel 6
+  (FE control pages) is ignored.
+- Device numbers are drawn once (1–65535) and saved through `saveDeviceNumbers`.
 
 ## Platform services
 

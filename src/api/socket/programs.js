@@ -1,7 +1,10 @@
 // Training programs (contracts/api.md): programs:preview|create|list|get|delete|start, and
 // programs:changed. A day is done once a workout of its plan completed.
+// programs:createCustom / programs:updateCustom: your own program, built week by week from your
+// plans (src/core/programs/custom.js).
 const { AppError } = require('../../lib/errors');
 const { generateProgram, targetOf } = require('../../core/programs/generate');
+const { buildCustomProgram, keepProgress } = require('../../core/programs/custom');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_AHEAD_MS = 2 * 365 * DAY_MS;
@@ -43,6 +46,32 @@ function registerPrograms({ server, programsRepo, plansRepo, workoutsRepo, engin
 	server.handle('programs:preview', 'programs-input', ({ payload }) => generate(payload));
 	server.handle('programs:create', 'programs-input', async ({ payload }) => {
 		const program = await programsRepo.create(generate(payload));
+		changed(program.id);
+		return program;
+	});
+	const custom = payload => buildCustomProgram(payload, id => {
+		if (!plansRepo.has(id)) {
+			throw new AppError('NOT_FOUND', 'One of the chosen plans no longer exists. Pick another.');
+		}
+		return plansRepo.get(id);
+	});
+	server.handle('programs:createCustom', 'programs-custom', async ({ payload }) => {
+		if (payload.id) {
+			throw new AppError('INVALID', 'Use programs:updateCustom to change a program.');
+		}
+		const program = await programsRepo.create(custom(payload));
+		changed(program.id);
+		return program;
+	});
+	server.handle('programs:updateCustom', 'programs-custom', async ({ payload }) => {
+		if (!payload.id) {
+			throw new AppError('INVALID', 'Which program? (id is missing)');
+		}
+		const current = programsRepo.get(payload.id);
+		if (current.goal !== 'custom') {
+			throw new AppError('INVALID', 'Only programs you built yourself can be edited.');
+		}
+		const program = await programsRepo.replace(payload.id, keepProgress(current, custom(payload)));
 		changed(program.id);
 		return program;
 	});

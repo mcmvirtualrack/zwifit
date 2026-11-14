@@ -165,6 +165,12 @@ Every run is saved with per-step targets, actual speed, incline, heart rate, cad
 **History** for charts and the per-step breakdown, and export a workout as **CSV** (spreadsheets) or
 **FIT** (Garmin Connect, Strava and others).
 
+Runs without a plan are saved too, as **Free run**, whether the belt was started from the console or
+the dashboard. While one is going, the dashboard shows its time and distance with **Pause** (stops
+the belt), **Resume** (or start the belt on the console) and **Finish**, which saves it to the
+history. A run left stopped for 30 minutes is finished by itself; one that never reached a minute
+of running is then dropped.
+
 ### Sensors
 
 Heart rate, cadence and power each have a source in **Settings → Sensors**: Auto, ANT+, Bluetooth
@@ -183,6 +189,30 @@ treadmill data, and optionally as a separate Bluetooth power meter). Restart Zwi
 pair "Zwifit" as Run Speed, Heart Rate, Cadence and Power Source. The same page lists the Zwift
 devices connected and what they read. When a sensor stops, Zwift's value goes blank rather than
 showing zero.
+
+### ANT+ broadcast (watches and head units)
+
+With an ANT+ stick, Zwifit can also send its readings as ANT+ sensors, so a Garmin or other
+watch or head unit records the run with the treadmill's speed and distance. Turn it on in
+**Settings → ANT+ broadcast** and pick what to send:
+
+- **Footpod**: speed, distance and cadence. On the watch, add a sensor and pick *Foot Pod*.
+- **Heart rate**: the heart rate shown on the dashboard. Pick *Heart Rate*.
+- **Power**: running power from a Stryd or the treadmill. Pick *Power*.
+- **Treadmill**: speed, incline, distance and time as ANT+ fitness equipment, for watches and
+  head units that pair with a gym treadmill.
+
+The watch pairs by the device number shown on the settings page; **New device numbers** gives
+Zwifit new ones (pair again afterwards). Heart rate or power that already comes from an ANT+
+sensor isn't sent again unless you ask for it: pair your watch with that sensor directly. Zwifit
+only sends. Nothing paired with it can change the treadmill.
+
+The broadcast uses the same stick as ANT+ sensors, so the same per-OS stick setup applies (see
+[Software Requirements](#software-requirements)). It pauses for about 15 seconds while you scan
+for sensors and resumes on its own, also after the stick is unplugged and plugged back in. If no
+stick was open at start, because ANT+ sensors and the broadcast were both off, restart Zwifit
+after turning the broadcast on. ANT+ is not encrypted: anyone nearby with an ANT+ device can read
+these values.
 
 ### Settings
 

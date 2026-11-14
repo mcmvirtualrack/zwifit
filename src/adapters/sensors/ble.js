@@ -52,9 +52,15 @@ const withTimeout = (promise, ms, message) => {
 };
 
 class BleSensors extends EventEmitter {
-	constructor({ getSettings = () => ({}), loadNoble = () => require('@stoprocent/noble'), now = Date.now, scanMs = SCAN_MS, reconnectMs = RECONNECT_EVERY_MS, reconnectScanMs = RECONNECT_SCAN_MS, connectTimeoutMs = CONNECT_TIMEOUT_MS } = {}) {
+	// blockedReason(): why Bluetooth sensors must stay off right now (e.g. they would share the
+	// adapter with the Zwift broadcast), or null. While blocked, noble is not used at all.
+	// 'adapter-reset' is emitted after noble resets the adapter (it does on start and before each
+	// connection), which drops every connection on it and ends any advertising.
+	constructor({ getSettings = () => ({}), loadNoble = () => require('@stoprocent/noble'), blockedReason = () => null, now = Date.now, scanMs = SCAN_MS, reconnectMs = RECONNECT_EVERY_MS, reconnectScanMs = RECONNECT_SCAN_MS, connectTimeoutMs = CONNECT_TIMEOUT_MS } = {}) {
 		super();
 		this._getSettings = getSettings;
+		this._blockedReason = blockedReason;
+		this._hookedHci = null;
 		this._loadNoble = loadNoble;
 		this._now = now;
 		this._scanMs = scanMs;
@@ -76,7 +82,15 @@ class BleSensors extends EventEmitter {
 		this._links = new Map();
 		this._latest = { hr: null, cadence: null, power: null };
 		this._onDiscover = this._onDiscover.bind(this);
-		this._onState = () => this._changed();
+		this._onState = state => {
+			this._hookReset();
+			if (state === 'poweredOn') {
+				// noble reset the adapter on its way to poweredOn.
+				this.emit('adapter-reset');
+			}
+			this._changed();
+		};
+		this._onHciReset = () => this.emit('adapter-reset');
 	}
 
 	saved() {
@@ -88,7 +102,15 @@ class BleSensors extends EventEmitter {
 		return this._latest[kind];
 	}
 
+	_blocked() {
+		return this._blockedReason() || null;
+	}
+
 	_reason() {
+		const blocked = this._blocked();
+		if (blocked) {
+			return blocked;
+		}
 		if (this._loadError) {
 			return 'Bluetooth is not available on this computer (the noble library could not load).';
 		}
@@ -152,7 +174,7 @@ class BleSensors extends EventEmitter {
 			return;
 		}
 		this._stopped = false;
-		if (this.saved().length) {
+		if (this.saved().length && !this._blocked()) {
 			this._load();
 		}
 		this._timer = setInterval(() => this._sweep(), this._reconnectMs);
@@ -172,8 +194,24 @@ class BleSensors extends EventEmitter {
 			this._noble.removeListener('discover', this._onDiscover);
 			this._noble.removeListener('stateChange', this._onState);
 		}
+		if (this._hookedHci) {
+			this._hookedHci.removeListener('reset', this._onHciReset);
+			this._hookedHci = null;
+		}
 		for (const id of [...this._links.keys()]) {
 			this._drop(id);
+		}
+	}
+
+	// noble's HCI layer (Linux) says when it resets the adapter; created once noble starts.
+	_hookReset() {
+		const hci = this._noble && this._noble._bindings && this._noble._bindings._hci;
+		if (hci && hci !== this._hookedHci && typeof hci.on === 'function') {
+			if (this._hookedHci) {
+				this._hookedHci.removeListener('reset', this._onHciReset);
+			}
+			hci.on('reset', this._onHciReset);
+			this._hookedHci = hci;
 		}
 	}
 
@@ -195,11 +233,16 @@ class BleSensors extends EventEmitter {
 		}
 		this._noble.on('discover', this._onDiscover);
 		this._noble.on('stateChange', this._onState);
+		this._hookReset();
 		return true;
 	}
 
 	// Lists the sensors in range for scanMs. Returns at once.
 	startScan() {
+		const blocked = this._blocked();
+		if (blocked) {
+			throw new AppError('SENSORS_UNAVAILABLE', blocked);
+		}
 		if (!this._load() || this._noble.state !== 'poweredOn') {
 			throw new AppError('SENSORS_UNAVAILABLE', this._reason() || 'Bluetooth is not ready.');
 		}
@@ -226,7 +269,7 @@ class BleSensors extends EventEmitter {
 				this._drop(id);
 			}
 		}
-		if (saved.size && this._load()) {
+		if (saved.size && !this._blocked() && this._load()) {
 			for (const id of saved) {
 				if (this._seen.has(id) && !this._links.has(id)) {
 					this._connect(id);
@@ -239,7 +282,7 @@ class BleSensors extends EventEmitter {
 
 	// Saved sensors not connected: scan for them for a while (they connect when heard).
 	_sweep() {
-		if (this._stopped || !this._noble || this._noble.state !== 'poweredOn') {
+		if (this._stopped || this._blocked() || !this._noble || this._noble.state !== 'poweredOn') {
 			return;
 		}
 		if (!this.saved().some(s => !this._links.has(s.id))) {
@@ -274,7 +317,7 @@ class BleSensors extends EventEmitter {
 		if (this._scanEndsAt) {
 			this._found.add(id);
 		}
-		if (saved && !this._links.has(id) && !this._stopped) {
+		if (saved && !this._links.has(id) && !this._stopped && !this._blocked()) {
 			this._connect(id);
 		}
 		else if (isNew) {

@@ -94,12 +94,28 @@
 
 	<div class="controls">
 		<div class="controls__belt" role="group" aria-label="Belt">
-			<button class="btn btn--lg btn--primary" type="button" (click)="startBelt()" [disabled]="!canStart()">
-				<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z" /></svg>Start
-			</button>
-			<button class="btn btn--lg btn--stop" type="button" (click)="stopBelt()" [disabled]="!canStop()">
-				<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>Stop
-			</button>
+			@if (freeRunActive()) {
+				<!-- A run without a plan: Pause / Resume keep it going, Finish saves it to the history. -->
+				@if (freeRun().state === 'paused') {
+					<button class="btn btn--lg btn--primary" type="button" (click)="startBelt()" [disabled]="!canStart()">
+						<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z" /></svg>Resume
+					</button>
+				} @else {
+					<button class="btn btn--lg btn--stop" type="button" (click)="stopBelt()" [disabled]="!canStop()">
+						<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg>Pause
+					</button>
+				}
+				<button class="btn btn--lg" type="button" (click)="finishRun()" [disabled]="busy()">
+					<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /></svg>Finish
+				</button>
+			} @else {
+				<button class="btn btn--lg btn--primary" type="button" (click)="startBelt()" [disabled]="!canStart()">
+					<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z" /></svg>Start
+				</button>
+				<button class="btn btn--lg btn--stop" type="button" (click)="stopBelt()" [disabled]="!canStop()">
+					<svg class="btn__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2" /></svg>Stop
+				</button>
+			}
 		</div>
 		<div class="controls__speed">
 			<button class="btn btn--round" type="button" (click)="stepSpeed(-1)" [disabled]="!canSpeed(-1)" aria-label="Slower">−</button>
@@ -111,7 +127,17 @@
 			</div>
 		</div>
 	</div>
-	@if (startHint(); as hint) { <p class="field__hint">{{ hint }}</p> }
+	@if (freeRunActive()) {
+		<p class="field__hint" aria-live="polite">
+			<strong>Free run{{ freeRun().state === 'paused' ? ' · paused' : '' }}</strong>
+			· {{ prefs.duration(freeRun().seconds) }} · {{ prefs.distance(freeRun().metres) }}
+			· {{ freeRun().state === 'paused'
+				? (canResumeHere() ? 'Resume to carry on, or Finish to save it to the history.' : 'Start the belt on the console to carry on, or Finish to save it to the history.')
+				: 'Saved to the history when you press Finish.' }}
+		</p>
+	} @else {
+		@if (startHint(); as hint) { <p class="field__hint">{{ hint }}</p> }
+	}
 	<span class="field__hint">Limits {{ prefs.speed(limits().minKph) }}–{{ prefs.speed(limits().maxKph) }} {{ prefs.speedLabel() }}</span>
 </section>
 

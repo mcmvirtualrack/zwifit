@@ -163,6 +163,58 @@
 					<span class="switch-row__text" id="sw-ant"><strong>ANT+ USB stick</strong><span class="muted">Heart rate from a watch or strap, cadence and power from a Stryd or footpod · applies after a restart</span></span>
 					<button type="button" class="switch" role="switch" aria-labelledby="sw-ant" [attr.aria-checked]="f.ant" (click)="f.ant = !f.ant"><span class="switch__track"></span></button>
 				</div>
+				<div class="switch-row">
+					<span class="switch-row__text" id="sw-ble-zwift"><strong>Allow Bluetooth sensors while broadcasting to Zwift</strong><span class="muted">With one Bluetooth adapter, scanning for or connecting to a Bluetooth sensor drops Zwift's connection for a few seconds. Leave off and use ANT+, unless Zwifit has a second Bluetooth adapter for sensors.</span></span>
+					<button type="button" class="switch" role="switch" aria-labelledby="sw-ble-zwift" [attr.aria-checked]="f.bluetoothWithZwift" (click)="f.bluetoothWithZwift = !f.bluetoothWithZwift"><span class="switch__track"></span></button>
+				</div>
+
+				@if (ant(); as a) {
+					@if (a.available || antInRange().length) {
+						<section class="metric-card" aria-labelledby="ant-in-range-title">
+							<div class="metric-card__head">
+								<h3 class="metric-card__title" id="ant-in-range-title">ANT+ devices in range</h3>
+								<span class="spacer"></span>
+								<button class="btn btn--ghost" type="button" (click)="scan('ant')" [disabled]="scanningAny() || !canScan('ant')">
+									@if (a.scan?.active) { <span class="scan-dot" aria-hidden="true"></span>Scanning… } @else { Scan ANT+ }
+								</button>
+							</div>
+							<ul class="device-list" aria-live="polite">
+								@for (r of antInRange(); track r.id) {
+									<li class="device" [class.device--on]="r.inUse">
+										<span class="device__badge">ANT+</span>
+										<span class="device__text">
+											@if (renamingSensor() === 'ant:' + r.id) {
+												<span class="row">
+													<input class="input" type="text" maxlength="40" placeholder="Name (empty: the sensor's own)" aria-label="Sensor name"
+														[(ngModel)]="sensorNameDraft" [ngModelOptions]="{ standalone: true }"
+														(keydown.enter)="saveSensorRename('ant', r.id)" (keydown.escape)="cancelSensorRename()">
+													<button class="btn" type="button" (click)="saveSensorRename('ant', r.id)">Save</button>
+													<button class="btn btn--ghost" type="button" (click)="cancelSensorRename()">Cancel</button>
+												</span>
+											} @else {
+												<strong>{{ r.name }} · {{ r.kinds }}</strong>
+											}
+											<span class="muted">{{ r.detail }}</span>
+										</span>
+										<span class="device__value num">{{ r.reading }}</span>
+										<span class="device__status" [class.device__status--on]="r.inUse">{{ r.status }}</span>
+										@if (renamingSensor() !== 'ant:' + r.id) {
+											<button class="btn btn--ghost device__action" type="button" (click)="startSensorRename('ant', r.id, r.name)" [attr.aria-label]="'Rename ' + r.name">Rename</button>
+										}
+									</li>
+								}
+								@empty {
+									<li class="device device--empty muted">Nothing heard yet. Wake your sensors (on a Garmin watch, turn on "Broadcast Heart Rate") and press Scan ANT+.</li>
+								}
+							</ul>
+							<p class="field__hint">
+								Without a scan the stick hears one device of each kind, the first it locks onto; a scan lists every one in range.
+								@if (antLastScan(); as last) { Last scan {{ last }}. }
+								Scanning pauses ANT+ readings and the ANT+ broadcast for about 15 seconds.
+							</p>
+						</section>
+					}
+				}
 
 				@for (m of metricCards(); track m.kind) {
 					<section class="metric-card" [attr.aria-labelledby]="'metric-' + m.kind">
@@ -184,12 +236,25 @@
 								<li class="device" [class.device--on]="r.inUse">
 									<span class="device__badge" [class.device__badge--ble]="r.badge === 'BLE'">{{ r.badge }}</span>
 									<span class="device__text">
-										<strong>{{ r.entry?.name ?? 'Treadmill' }}</strong>
+										@if (r.entry && renamingSensor() === r.entry.key) {
+											<span class="row">
+												<input class="input" type="text" maxlength="40" placeholder="Name (empty: the sensor's own)" aria-label="Sensor name"
+													[(ngModel)]="sensorNameDraft" [ngModelOptions]="{ standalone: true }"
+													(keydown.enter)="saveSensorRename(r.entry.transport, r.entry.id)" (keydown.escape)="cancelSensorRename()">
+												<button class="btn" type="button" (click)="saveSensorRename(r.entry.transport, r.entry.id)">Save</button>
+												<button class="btn btn--ghost" type="button" (click)="cancelSensorRename()">Cancel</button>
+											</span>
+										} @else {
+											<strong>{{ r.entry?.name ?? 'Treadmill' }}</strong>
+										}
 										<span class="muted">{{ r.detail }}</span>
 									</span>
 									<span class="device__value num">{{ r.value }}</span>
 									<span class="device__status" [class.device__status--on]="r.inUse">{{ r.status }}</span>
 									@if (r.entry; as e) {
+										@if (renamingSensor() !== e.key) {
+											<button class="btn btn--ghost device__action" type="button" (click)="startSensorRename(e.transport, e.id, e.name)" [attr.aria-label]="'Rename ' + e.name">Rename</button>
+										}
 										@if (isPicked(e)) {
 											<button class="btn btn--ghost device__action" type="button" (click)="forgetSensor(e)" [disabled]="busy() === e.key" [attr.aria-label]="'Forget ' + e.name">Forget</button>
 										}
@@ -231,6 +296,45 @@
 					</section>
 				}
 				<p class="field__hint">"Use" (or "Pin" for the one in use) picks that sensor over any other in range and remembers it; "Forget" goes back to the first one found. Scanning ANT+ pauses ANT+ readings for about 15 seconds. On a Garmin watch, turn on "Broadcast Heart Rate"; a Stryd sends data once it is awake (tap it).</p>
+			</section>
+
+			<section class="card stack" id="ant-broadcast" aria-labelledby="ant-broadcast-title">
+				<div class="row">
+					<h2 class="card__title" id="ant-broadcast-title">ANT+ broadcast</h2>
+					<span class="spacer"></span>
+					@let pill = antBroadcastPill();
+					<span class="pill" [class.pill--ok]="pill.tone === 'ok'" [class.pill--warn]="pill.tone === 'warn'"><span class="pill__dot"></span>{{ pill.label }}</span>
+				</div>
+				<p class="muted">Zwifit sends its readings from the ANT+ stick as ANT+ sensors, so a Garmin or other watch or head unit can record the run. It only sends: nothing paired to it can change the treadmill.</p>
+				@if (antBroadcast(); as b) {
+					@if (b.reason && b.state !== 'off') { <p class="muted">{{ b.reason }}</p> }
+					@if (b.needsRestart) { <p class="muted">Restart Zwifit (Server → Restart) to open the ANT+ stick for the broadcast.</p> }
+				}
+				<div class="switch-row">
+					<span class="switch-row__text" id="sw-antb"><strong>Broadcast as ANT+ sensors</strong><span class="muted">Uses the same ANT+ stick as ANT+ sensors · paused while scanning for sensors</span></span>
+					<button type="button" class="switch" role="switch" aria-labelledby="sw-antb" [attr.aria-checked]="f.antBroadcast" (click)="f.antBroadcast = !f.antBroadcast"><span class="switch__track"></span></button>
+				</div>
+				<ul class="device-list" aria-live="polite">
+					@for (k of antBroadcastKinds; track k.kind) {
+						@let s = antSensor(k.kind);
+						<li class="device" [class.device--on]="!!s?.sending">
+							<span class="device__badge">ANT+</span>
+							<span class="device__text">
+								<strong [id]="'sw-antb-' + k.kind">{{ k.label }}</strong>
+								<span class="muted">{{ s?.note ?? k.hint }}</span>
+							</span>
+							<span class="device__value num">{{ s?.deviceNumber ? '#' + s?.deviceNumber : (f.antBroadcast ? '' : '–') }}</span>
+							<span class="device__status" [class.device__status--on]="!!s?.sending">{{ s?.sending ? 'Sending' : (f.antBroadcast && antKindSwitch(f, k.kind) ? 'Waiting' : 'Off') }}</span>
+							<button type="button" class="switch" role="switch" [attr.aria-labelledby]="'sw-antb-' + k.kind" [attr.aria-checked]="antKindSwitch(f, k.kind)" (click)="toggleAntKind(f, k.kind)"><span class="switch__track"></span></button>
+						</li>
+					}
+				</ul>
+				<label class="toggle"><input type="checkbox" [(ngModel)]="f.antRebroadcastHr"> Also send heart rate that comes from an ANT+ sensor (normally pair your watch with that sensor directly)</label>
+				<label class="toggle"><input type="checkbox" [(ngModel)]="f.antRebroadcastPower"> Also send power that comes from an ANT+ sensor</label>
+				<div class="row">
+					<button class="btn btn--ghost" type="button" (click)="renumberAnt()" [disabled]="renumbering()">New device numbers</button>
+				</div>
+				<p class="field__hint">On the watch, add a sensor and pick Footpod, Heart rate, Power or the treadmill (fitness equipment); it pairs by the device number shown. New device numbers mean pairing again. ANT+ is not encrypted: anyone nearby with an ANT+ device can read these values.</p>
 			</section>
 
 			<section class="card stack" id="display" aria-labelledby="units-title">

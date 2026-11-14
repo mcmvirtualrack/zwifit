@@ -291,13 +291,14 @@ test('a scan lists every sensor in range by device, then reopens the channels', 
 	sdm.emit('ssdData', { DeviceId: 31877, CadenceInteger: 86, CadenceFractional: 0, Rssi: -60 });
 	hr.emit('heartRateData', { DeviceId: 4242, ComputedHeartRate: 140, Rssi: -75, ManId: 1 });
 	expect(sensors.status().found).toEqual([
-		{ id: '31877', kinds: ['power', 'cadence'], values: { power: 250, cadence: 172 }, rssi: -60, manufacturer: null },
-		{ id: '4242', kinds: ['hr'], values: { hr: 140 }, rssi: -75, manufacturer: 'Garmin' }
+		{ id: '31877', kinds: ['power', 'cadence'], values: { power: 250, cadence: 172 }, rssi: -60, manufacturer: null, lastSeenAt: expect.any(String) },
+		{ id: '4242', kinds: ['hr'], values: { hr: 140 }, rssi: -75, manufacturer: 'Garmin', lastSeenAt: expect.any(String) }
 	]);
 	expect(sensors.describe('31877')).toEqual({ id: '31877', kinds: ['power', 'cadence'], name: null });
 	await done;
-	expect(sensors.status()).toMatchObject({ available: true, scan: { active: false } });
+	expect(sensors.status()).toMatchObject({ available: true, scan: { active: false, lastAt: expect.any(String) } });
 	expect(made.hr.at(-1).stick).not.toBe(scanStick);
+	// The last scan's results stay listed (ANT+ devices in range) until the next scan.
 	expect(sensors.status().found).toHaveLength(2);
 });
 
@@ -327,4 +328,109 @@ test('stepsPerMinute', () => {
 	expect(stepsPerMinute({ CadenceInteger: 80, CadenceFractional: 0 })).toBe(160);
 	expect(stepsPerMinute({ CadenceInteger: 0, CadenceFractional: 0 })).toBe(0);
 	expect(stepsPerMinute({})).toBeNull();
+});
+
+describe('sharing the stick with the ANT+ broadcast (specs/003)', () => {
+	// Records 'stick' / 'stick-lost' and the stick's own 'released', in order.
+	function record(s) {
+		const events = [];
+		s.on('stick', stick => {
+			events.push(['stick', stick.name]);
+			stick.once('released', () => events.push(['released', stick.name]));
+		});
+		s.on('stick-lost', stick => events.push(['stick-lost', stick.name]));
+		return events;
+	}
+
+	test("'stick' after opening; 'stick-lost' before releasing it on stop", async () => {
+		const { made, lib } = fakeAnt();
+		sensors = new AntSensors({ loadAnt: () => lib, loadUsb: fakeUsb, wsl: false });
+		const events = record(sensors);
+		expect(sensors.stickReady()).toBe(false);
+		await sensors.start();
+		const live = made.sticks.find(s => s.name === 'GarminStick2');
+		expect(events).toEqual([['stick', 'GarminStick2']]);
+		expect(sensors.stickReady()).toBe(true);
+		expect(sensors.currentStick()).toBe(live);
+		await sensors.stop();
+		sensors = null;
+		expect(events).toEqual([['stick', 'GarminStick2'], ['stick-lost', 'GarminStick2'], ['released', 'GarminStick2']]);
+	});
+
+	test("unplugging the stick gives 'stick-lost', and reopening it gives 'stick' again", async () => {
+		const usb = new EventEmitter();
+		const { lib } = fakeAnt();
+		lib.GarminStick2.prototype.open = async function () {
+			this.device = { close: jest.fn() };
+			setImmediate(() => this.emit('startup'));
+			return true;
+		};
+		sensors = new AntSensors({ loadAnt: () => lib, loadUsb: () => usb, wsl: false, retryMs: 20 });
+		const events = record(sensors);
+		await sensors.start();
+		usb.emit('detach', sensors.currentStick().device);
+		expect(events.map(e => e[0])).toEqual(['stick', 'stick-lost', 'released']);
+		expect(sensors.stickReady()).toBe(false);
+		await new Promise(resolve => setTimeout(resolve, 60));
+		expect(events.map(e => e[0]).slice(0, 4)).toEqual(['stick', 'stick-lost', 'released', 'stick']);
+		expect(sensors.stickReady()).toBe(true);
+	});
+
+	test("the library's 'shutdown' (stick removed) gives 'stick-lost'", async () => {
+		const { lib } = fakeAnt();
+		sensors = new AntSensors({ loadAnt: () => lib, loadUsb: fakeUsb, wsl: false, retryMs: 60000 });
+		const events = record(sensors);
+		await sensors.start();
+		sensors.currentStick().emit('shutdown');
+		expect(events.map(e => e[0])).toEqual(['stick', 'stick-lost']);
+		expect(sensors.stickReady()).toBe(false);
+	});
+
+	test("a scan takes the stick ('stick-lost') and gives it back afterwards ('stick')", async () => {
+		const { lib } = fakeAnt();
+		sensors = new AntSensors({ loadAnt: () => lib, loadUsb: fakeUsb, wsl: false, scanMs: 20 });
+		const events = record(sensors);
+		await sensors.start();
+		const { done } = sensors.startScan();
+		await tick();
+		expect(events.map(e => e[0])).toEqual(['stick', 'stick-lost', 'released']);
+		expect(sensors.stickReady()).toBe(false);
+		await done;
+		expect(events.map(e => e[0])).toEqual(['stick', 'stick-lost', 'released', 'stick']);
+		expect(sensors.stickReady()).toBe(true);
+	});
+
+	test("reconnect() gives 'stick-lost' then 'stick'", async () => {
+		const { lib } = fakeAnt();
+		sensors = new AntSensors({ loadAnt: () => lib, loadUsb: fakeUsb, wsl: false });
+		const events = record(sensors);
+		await sensors.start();
+		await sensors.reconnect();
+		expect(events.map(e => e[0])).toEqual(['stick', 'stick-lost', 'released', 'stick']);
+	});
+
+	test('listen: false opens the stick for the broadcast without receive channels', async () => {
+		const { made, lib } = fakeAnt();
+		let listen = false;
+		sensors = new AntSensors({ loadAnt: () => lib, loadUsb: fakeUsb, wsl: false, listen: () => listen });
+		const events = record(sensors);
+		await sensors.start();
+		expect(events).toEqual([['stick', 'GarminStick2']]);
+		expect(made.hr).toHaveLength(0);
+		expect(made.sdm).toHaveLength(0);
+		expect(made.power).toHaveLength(0);
+		expect(sensors.status().available).toBe(true);
+		// Read on every open, so switching ANT+ sensors back on applies on the next reopen.
+		listen = true;
+		await sensors.reconnect();
+		expect(made.hr).toHaveLength(1);
+	});
+
+	test('listen as a plain boolean works too', async () => {
+		const { made, lib } = fakeAnt();
+		sensors = new AntSensors({ loadAnt: () => lib, loadUsb: fakeUsb, wsl: false, listen: false });
+		await sensors.start();
+		expect(made.hr).toHaveLength(0);
+		expect(sensors.stickReady()).toBe(true);
+	});
 });

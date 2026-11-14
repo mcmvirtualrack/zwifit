@@ -8,6 +8,13 @@
 
 **Input**: User description: "add a new specs ANT+ broadcast from zwifit option"
 
+## Clarifications
+
+### Session 2026-11-13
+
+- Q: Which ANT+ device types must ship in this release? → A: All of them: footpod, heart rate,
+  power and treadmill (fitness equipment), each selectable under the ANT+ broadcast option.
+
 **Depends on**: `001-cross-platform-training-plans` (ANT+ stick support for sensors, Settings
 page, Zwift broadcast settings, paired-device security, cross-platform runtime).
 
@@ -160,9 +167,9 @@ the status reads "no ANT+ stick found" and "broadcasting as footpod #NNNN" respe
 - **FR-002**: When on, Zwifit MUST broadcast as a standard ANT+ stride-based speed and distance
   sensor (footpod) carrying instantaneous speed, accumulated distance and, when available, cadence.
 - **FR-003**: Zwifit MUST let the runner choose which additional ANT+ sensors to broadcast as:
-  heart rate monitor, power meter and treadmill (fitness equipment). The sensors to be supported
-  in this release are [NEEDS CLARIFICATION: which ANT+ device types must ship — footpod only;
-  footpod + heart rate + power; or all of those plus treadmill/fitness equipment?].
+  heart rate monitor, power meter and treadmill (fitness equipment). All four ANT+ device types
+  (footpod, heart rate, power and treadmill/fitness equipment) MUST ship in this release, each
+  with its own on/off choice under the single ANT+ broadcast option.
 - **FR-004**: Broadcast values MUST come from the same live data shown on the control page
   (treadmill speed, distance and incline; heart rate, cadence and power from the sources chosen
   in Settings → Sensors), including any speed offset/multiplier and power smoothing settings.

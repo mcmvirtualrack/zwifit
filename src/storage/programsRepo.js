@@ -76,6 +76,12 @@ function createProgramsRepo({ dir, clock = systemClock }) {
 		return write(program);
 	}
 
+	// A custom program after an edit: same id and createdAt, new days.
+	async function replace(id, next) {
+		const current = get(id);
+		return write({ ...clone(next), id, schemaVersion: current.schemaVersion, createdAt: current.createdAt, updatedAt: new Date(clock.now()).toISOString() });
+	}
+
 	async function remove(id) {
 		if (!programs.has(id)) {
 			throw new AppError('NOT_FOUND', 'No such program.');
@@ -84,7 +90,7 @@ function createProgramsRepo({ dir, clock = systemClock }) {
 		programs.delete(id);
 	}
 
-	return { load, list, get, create, setDayPlan, remove };
+	return { load, list, get, create, replace, setDayPlan, remove };
 }
 
 module.exports = { createProgramsRepo };

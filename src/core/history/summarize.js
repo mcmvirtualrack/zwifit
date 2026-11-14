@@ -86,10 +86,33 @@ function summarize({ planSnapshot, startedAt }, samples) {
 		totals.avgPower = Math.round(average(powers));
 		totals.maxPower = Math.max(...powers);
 	}
+	Object.assign(totals, inclineTotals(samples));
 	return { steps, totals };
 }
 
 const positive = values => values.filter(v => typeof v === 'number' && v > 0);
+
+// Incline over the run, only when the belt was ever tilted: average and highest while moving (%),
+// and the height climbed (m): each stretch of distance times the incline it was run at, uphill only.
+function inclineTotals(samples) {
+	if (!samples.some(s => typeof s.incline === 'number' && s.incline !== 0)) {
+		return {};
+	}
+	const moving = samples.filter(s => s.kph > 0 && typeof s.incline === 'number');
+	let climb = 0;
+	for (let i = 1; i < samples.length; i++) {
+		const prev = samples[i - 1];
+		const run = samples[i].metres - prev.metres;
+		if (run > 0 && prev.incline > 0) {
+			climb += run * prev.incline / 100;
+		}
+	}
+	return {
+		avgIncline: round(average(moving.map(s => s.incline)) ?? 0, 1),
+		maxIncline: round(Math.max(...(moving.length ? moving : samples).map(s => s.incline || 0)), 1),
+		climbMetres: round(climb, 1)
+	};
+}
 
 // NDJSON text → samples, ignoring a truncated last line (crash mid-write).
 function parseSamples(text) {

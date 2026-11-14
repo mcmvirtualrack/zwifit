@@ -1,4 +1,4 @@
-// Pushes `status` ({ treadmill, broadcast }) to paired clients: on connect, on change, and at 1 Hz
+// Pushes `status` ({ treadmill, broadcast, sensors, antBroadcast }) to paired clients: on connect, on change, and at 1 Hz
 // while the belt moves (contracts/api.md "Server → client").
 const { effectiveLimits } = require('../../core/limits');
 const { createOdometer, advanceOdometer } = require('../../core/session');
@@ -8,7 +8,9 @@ const MIN_EMIT_GAP_MS = 250;
 
 const { ANT_OFF, BLE_OFF } = require('../../adapters/sensors/hub');
 
-function createStatusHub({ server, treadmill, broadcast, sensors = null, settingsRepo, clock = systemClock }) {
+const ANT_BROADCAST_OFF = { state: 'off', sensors: [] };
+
+function createStatusHub({ server, treadmill, broadcast, sensors = null, antBroadcast = null, freeRun = null, settingsRepo, clock = systemClock }) {
 	let treadmillStatus = { connected: false, reason: 'Starting…', kph: 0, incline: 0, hr: null, estimatedSpeed: false };
 	let broadcastStatus = { available: false, reason: 'Starting…', poweredOn: false, advertising: false, clients: 0 };
 	let odometer = createOdometer();
@@ -27,7 +29,10 @@ function createStatusHub({ server, treadmill, broadcast, sensors = null, setting
 				capabilities: { ...treadmill.capabilities }
 			},
 			broadcast: { ...broadcastStatus },
-			sensors: sensors ? sensors.status() : { ant: ANT_OFF, bluetooth: BLE_OFF }
+			sensors: sensors ? sensors.status() : { ant: ANT_OFF, bluetooth: BLE_OFF },
+			antBroadcast: antBroadcast ? antBroadcast.status() : { ...ANT_BROADCAST_OFF },
+			// A run without a plan, recorded for the history (dashboard Pause / Resume / Finish).
+			freeRun: freeRun ? freeRun.status() : { state: 'idle' }
 		};
 	}
 
@@ -63,6 +68,12 @@ function createStatusHub({ server, treadmill, broadcast, sensors = null, setting
 		if (sensors) {
 			sensors.on('status', emitSoon);
 		}
+		if (antBroadcast) {
+			antBroadcast.on('status', emitSoon);
+		}
+		if (freeRun) {
+			freeRun.on('status', emitSoon);
+		}
 		server.onConnection(socket => socket.emit('status', snapshot()));
 		ticker = clock.setInterval(() => {
 			if (treadmillStatus.kph > 0) {
@@ -77,6 +88,12 @@ function createStatusHub({ server, treadmill, broadcast, sensors = null, setting
 		broadcast.off('status', onBroadcastStatus);
 		if (sensors) {
 			sensors.off('status', emitSoon);
+		}
+		if (antBroadcast) {
+			antBroadcast.off('status', emitSoon);
+		}
+		if (freeRun) {
+			freeRun.off('status', emitSoon);
 		}
 		clock.clearInterval(ticker);
 		clock.clearTimeout(pending);

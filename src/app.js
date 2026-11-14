@@ -28,12 +28,15 @@ const { demoPlan } = require('./core/plans/demo');
 const { effectiveLimits } = require('./core/limits');
 const { PlaybackEngine } = require('./core/playback/engine');
 const { createRecorder } = require('./core/history/recorder');
+const { FreeRunTracker } = require('./core/history/freeRun');
 const { createWorkoutsRepo } = require('./storage/workoutsRepo');
 const { registerPlayback } = require('./api/socket/playback');
 const { registerWorkouts } = require('./api/socket/workouts');
 const { mountWorkouts } = require('./api/http/workouts');
 const { createZwiftDevicesRepo } = require('./storage/zwiftDevicesRepo');
 const { AntSensors } = require('./adapters/sensors/ant');
+const { AntBroadcast } = require('./adapters/antBroadcast');
+const { registerAntBroadcast } = require('./api/socket/antBroadcast');
 const { BleSensors } = require('./adapters/sensors/ble');
 const { SensorHub } = require('./adapters/sensors/hub');
 const { registerSensors } = require('./api/socket/sensors');
@@ -118,7 +121,9 @@ async function createApp({
 	port,
 	host,
 	// Called by Settings → Restart Zwifit; null when nothing would start Zwifit again.
-	restart = null
+	restart = null,
+	// Test doubles for the ANT+ stick ({ loadAnt, loadUsb, wsl }); also opens it with disableSensors.
+	ant = null
 } = {}) {
 	paths.ensureDataDir(dataDir);
 	const settingsRepo = createSettingsRepo({ dir: dataDir, legacyDir });
@@ -138,8 +143,31 @@ async function createApp({
 	// ANT+ and Bluetooth heart rate (watch, strap), cadence and power (footpod, Stryd), merged into
 	// the treadmill's status.
 	const getSettings = () => settingsRepo.get();
-	const antSensors = !disableSensors && (!settings.sensors || settings.sensors.ant !== false) ? new AntSensors({ getSettings }) : null;
-	const bleSensors = disableSensors ? null : new BleSensors({ getSettings });
+	// One ANT+ stick for both: reception of ANT+ sensors (channels 0–2, if ANT+ sensors are on) and
+	// the ANT+ broadcast (channels 3–6, specs/003). It is opened when either is on at start;
+	// turning the broadcast on later with neither needs a restart (the status says so).
+	const antListening = !settings.sensors || settings.sensors.ant !== false;
+	const antBroadcasting = !!(settings.antBroadcast && settings.antBroadcast.enabled);
+	const antStick = (!disableSensors || ant) && (antListening || antBroadcasting)
+		? new AntSensors({ getSettings, listen: () => (getSettings().sensors || {}).ant !== false, ...ant })
+		: null;
+	// ANT+ sensors (Settings → Sensors) only when switched on; otherwise the stick only broadcasts.
+	const antSensors = antListening ? antStick : null;
+	// Bluetooth sensors (noble) and the Zwift broadcast (bleno) on one Linux adapter: noble resets the
+	// adapter when it starts and before every connection, which drops Zwift and ends advertising.
+	// So Bluetooth sensors stay off while they would share it, unless allowed in Settings → Sensors.
+	let zwiftBroadcast = null;
+	const sharedAdapter = os.platform() === 'linux' && (process.env.NOBLE_HCI_DEVICE_ID || '0') === (process.env.BLENO_HCI_DEVICE_ID || '0');
+	const bluetoothBlocked = () => {
+		if (!sharedAdapter || !zwiftBroadcast || typeof zwiftBroadcast.adapterReset !== 'function') {
+			return null;
+		}
+		if ((getSettings().sensors || {}).bluetoothWithZwift) {
+			return null;
+		}
+		return 'Off while Zwifit broadcasts to Zwift on the same Bluetooth adapter: connecting to a Bluetooth sensor would drop Zwift. Use ANT+, or allow Bluetooth sensors below.';
+	};
+	const bleSensors = disableSensors ? null : new BleSensors({ getSettings, blockedReason: bluetoothBlocked });
 	const sensors = antSensors || bleSensors ? new SensorHub({ ant: antSensors, bluetooth: bleSensors }) : null;
 	const treadmill = new MergedTreadmill({ treadmill: adapter, sensors, getSettings });
 	// One console line per change of state (statuses repeat often). describe(s) returns
@@ -159,9 +187,9 @@ async function createApp({
 		}
 	};
 	const starting = reason => reason === 'Starting Bluetooth…' || reason === 'Starting…';
-	if (antSensors) {
-		logStatus(antSensors, s => s.available
-			? { ok: true, line: 'ANT+ stick ready, listening for heart rate and footpod' }
+	if (antStick) {
+		logStatus(antStick, s => s.available
+			? { ok: true, line: antSensors ? 'ANT+ stick ready, listening for heart rate and footpod' : 'ANT+ stick ready (for the ANT+ broadcast only)' }
 			: { ok: false, line: `ANT+ unavailable: ${s.reason}` });
 	}
 	if (bleSensors) {
@@ -177,6 +205,11 @@ async function createApp({
 		}, { now: true });
 	}
 	const broadcast = createBroadcast(settings, { disableBroadcast });
+	zwiftBroadcast = broadcast;
+	// When Bluetooth sensors are allowed anyway: advertise to Zwift again after each noble reset.
+	if (bleSensors && typeof broadcast.adapterReset === 'function') {
+		bleSensors.on('adapter-reset', () => broadcast.adapterReset());
+	}
 	logStatus(broadcast, s => {
 		if (s.advertising) {
 			const clients = s.clients ? `, ${s.clients} Zwift device(s) connected` : ', waiting for Zwift to connect';
@@ -185,6 +218,32 @@ async function createApp({
 		return !s.reason || starting(s.reason) ? null : { ok: false, line: `Bluetooth broadcast unavailable: ${s.reason}` };
 	});
 	const limits = () => effectiveLimits(settingsRepo.get().limits, treadmill.limits());
+	let server;
+	const antBroadcast = new AntBroadcast({
+		host: antStick,
+		getSettings,
+		getLimits: limits,
+		saveDeviceNumbers: async deviceNumbers => {
+			const current = settingsRepo.get();
+			await settingsRepo.replace({ ...current, antBroadcast: { ...current.antBroadcast, deviceNumbers } });
+			if (server) {
+				server.io.emit('settings', settingsRepo.publicView());
+			}
+		}
+	});
+	logStatus(antBroadcast, s => {
+		if (s.state === 'broadcasting') {
+			const list = s.sensors.map(x => `${x.kind} #${x.deviceNumber}`).join(', ');
+			return { ok: true, line: `ANT+ broadcast ready: ${list}` };
+		}
+		if (s.state === 'error') {
+			return { ok: false, line: `ANT+ broadcast unavailable: ${s.reason}` };
+		}
+		if (s.state === 'paused') {
+			return { ok: true, line: `ANT+ broadcast ${s.reason.toLowerCase()}` };
+		}
+		return null;
+	});
 
 	const plansRepo = createPlansRepo({ dir: dataDir, getLimits: limits });
 	await plansRepo.load();
@@ -216,7 +275,6 @@ async function createApp({
 	treadmill.on('status', status => engine.onStatus(status));
 
 	const tls = settings.server.tls && settings.server.tls.certPath ? settings.server.tls : null;
-	let server;
 	const plansChanged = id => server.io.emit('plans:changed', { id });
 	server = createServer({
 		pairing,
@@ -233,11 +291,23 @@ async function createApp({
 		onChanged: id => server.io.emit('workouts:changed', { id }),
 		log
 	});
+	// Runs without a plan (belt started from the console or Start) go into the history as "Free run".
+	// Created before the recorder attaches to the engine, so a plan starting ends the free run first.
+	const freeRun = new FreeRunTracker({ engine });
+	treadmill.on('status', status => freeRun.onStatus(status));
 	recorder.attach(engine);
+	recorder.attach(freeRun);
 
-	const hub = createStatusHub({ server, treadmill, broadcast, sensors, settingsRepo });
-	registerControl({ server, treadmill, settingsRepo, engine });
-	registerSettings({ server, settingsRepo });
+	const hub = createStatusHub({ server, treadmill, broadcast, sensors, antBroadcast, freeRun, settingsRepo });
+	registerControl({ server, treadmill, settingsRepo, engine, freeRun });
+	registerSettings({ server, settingsRepo, onChange: () => {
+		antBroadcast.refresh();
+		// "Allow Bluetooth sensors" may have changed.
+		if (bleSensors) {
+			bleSensors.refresh();
+		}
+	} });
+	registerAntBroadcast({ server, antBroadcast, log });
 	registerPlans({ server, plansRepo, isRunning: id => engine.runningPlanId() === id });
 	registerPlayback({ server, engine, plansRepo });
 	registerPrograms({ server, programsRepo, plansRepo, workoutsRepo, engine, getLimits: limits });
@@ -260,12 +330,21 @@ async function createApp({
 		return { restarting: true };
 	});
 
+	// The belt's measured speed goes to Zwift as is. A treadmill adapter that doesn't say (Bluetooth
+	// FTMS, simulator) reports its real speed; only a set or estimated speed is eased.
 	treadmill.on('status', status => broadcast.update({
 		kph: status.connected ? status.kph : 0,
+		measuredSpeed: !status.estimatedSpeed && status.speedSource !== 'set' && status.speedSource !== 'estimated',
 		incline: status.connected ? status.incline : 0,
 		hr: status.hr,
 		cadence: status.cadence,
 		power: status.power
+	}));
+	// Same values for the ANT+ broadcast, with their sources (FR-006: ANT+ values aren't sent back).
+	treadmill.on('status', status => antBroadcast.update({
+		...status,
+		kph: status.connected ? status.kph : 0,
+		incline: status.connected ? status.incline : 0
 	}));
 
 	treadmill.on('discovered', async ({ ip }) => {
@@ -278,10 +357,16 @@ async function createApp({
 
 	async function start() {
 		hub.start();
+		freeRun.start();
 		await treadmill.start();
 		await broadcast.start();
+		// Before the stick opens, so the broadcast hears its 'stick' event.
+		await antBroadcast.start();
 		if (sensors) {
 			await sensors.start();
+		}
+		if (antStick && !antSensors) {
+			await antStick.start();
 		}
 		address = await server.listen(port ?? settings.server.port, host ?? settings.server.host);
 		const scheme = server.secure ? 'https' : 'http';
@@ -299,14 +384,17 @@ async function createApp({
 
 	async function stop() {
 		engine.dispose();
+		freeRun.stop();
 		await recorder.flush();
 		hub.stop();
-		await Promise.allSettled([treadmill.stop(), broadcast.stop(), sensors ? sensors.stop() : null]);
+		// The broadcast closes its channels before the stick is let go.
+		await antBroadcast.stop();
+		await Promise.allSettled([treadmill.stop(), broadcast.stop(), sensors ? sensors.stop() : null, antStick && !antSensors ? antStick.stop() : null]);
 		await server.close();
 	}
 
 	// `treadmill` is the adapter itself (tests drive the simulator through it); the app uses the merged view.
-	return { start, stop, server, settingsRepo, devices, pairing, plansRepo, programsRepo, workoutsRepo, zwiftDevicesRepo, engine, recorder, treadmill: adapter, sensors, broadcast, limits, address: () => address };
+	return { start, stop, server, settingsRepo, devices, pairing, plansRepo, programsRepo, workoutsRepo, zwiftDevicesRepo, engine, recorder, freeRun, treadmill: adapter, sensors, broadcast, antBroadcast, limits, address: () => address };
 }
 
 module.exports = { createApp };

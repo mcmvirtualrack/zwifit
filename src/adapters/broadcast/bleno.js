@@ -29,6 +29,9 @@ function noAdapterReason(wsl = isWsl()) {
 		: 'No Bluetooth LE adapter found. Plug one in (or switch Bluetooth on) and restart Zwifit.';
 }
 
+// After an adapter reset by someone else, wait this long before advertising again.
+const READVERTISE_DELAY_MS = 1000;
+
 class BlenoBroadcast extends EventEmitter {
 	constructor({ settings, bleno, loadBleno, wsl, platform = os.platform() } = {}) {
 		super();
@@ -45,10 +48,39 @@ class BlenoBroadcast extends EventEmitter {
 		this._clients = new Map();
 		this._target = { kph: 0, incline: 0, hr: 0, cadence: 0, power: 0 };
 		this._ramped = { kph: 0, incline: 0, cadence: 0 };
+		this._measuredSpeed = false;
 		this._ticks = 0;
 		this._timer = null;
 		this._gatt = null;
 		this._handlers = null;
+		this._readvertiseTimer = null;
+	}
+
+	// Something else (noble, for Bluetooth sensors) reset the shared adapter: every connection is
+	// gone (bleno is not told) and advertising is off, though bleno still thinks it is on.
+	// Advertise again shortly, once the other side has finished setting the adapter up.
+	adapterReset(delayMs = READVERTISE_DELAY_MS) {
+		if (!this._handlers || !this._status.poweredOn) {
+			return;
+		}
+		clearTimeout(this._readvertiseTimer);
+		this._readvertiseTimer = setTimeout(() => {
+			this._readvertiseTimer = null;
+			if (!this._handlers || !this._status.poweredOn) {
+				return;
+			}
+			if (this._clients.size) {
+				this._clients.clear();
+				this._clientsChanged(null);
+			}
+			try {
+				this._bleno.stopAdvertising();
+			}
+			catch {
+				// not advertising
+			}
+			this._bleno.startAdvertising(NAME, this._gatt.uuids);
+		}, delayMs);
 	}
 
 	status() {
@@ -163,15 +195,20 @@ class BlenoBroadcast extends EventEmitter {
 		}
 	}
 
-	// Latest treadmill values (km/h). Sent to Zwift at 5 Hz with gentle ramping; heart rate and
-	// power are passed through as reported.
-	update({ kph, incline, hr, cadence, power }) {
+	// Latest treadmill values (km/h). Sent to Zwift at 5 Hz; heart rate and power are passed
+	// through as reported. measuredSpeed: kph is the belt's real, measured speed, which already
+	// changes gradually, so it is sent as is. Otherwise (a set or estimated speed, which jumps to a
+	// new value at once) it is eased toward the new value, as the belt would.
+	update({ kph, incline, hr, cadence, power, measuredSpeed = false }) {
 		this._target = { kph: kph || 0, incline: incline || 0, hr: hr || 0, cadence: cadence || 0, power: power || 0 };
+		this._measuredSpeed = !!measuredSpeed;
 	}
 
 	_tick() {
 		for (const key of Object.keys(this._ramped)) {
-			this._ramped[key] = ramp(this._ramped[key], this._target[key]);
+			this._ramped[key] = key === 'kph' && this._measuredSpeed
+				? this._target.kph
+				: ramp(this._ramped[key], this._target[key]);
 		}
 		// notify() sends to every subscribed client and does nothing when none is subscribed.
 		// Heart rate is passed through as reported (ramping it would invent values).
@@ -203,6 +240,8 @@ class BlenoBroadcast extends EventEmitter {
 	async stop() {
 		clearInterval(this._timer);
 		this._timer = null;
+		clearTimeout(this._readvertiseTimer);
+		this._readvertiseTimer = null;
 		const bleno = this._bleno;
 		if (!bleno || !this._handlers) {
 			return;

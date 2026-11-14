@@ -1,6 +1,6 @@
 import { Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
 import { HrHistoryService } from '../core/hr-history.service';
-import { PrefsService, ZONE_FLOORS, zoneOf } from '../core/prefs.service';
+import { PrefsService, zoneOf, zoneStops } from '../core/prefs.service';
 import { SocketService } from '../core/socket.service';
 import { displaySpeed } from '../core/units';
 import { LanePaths, axisLabels, ceilTo, lanePath, scaleFor } from './chart';
@@ -61,6 +61,12 @@ const average = (values: number[]) => (values.length ? Math.round(values.reduce(
 						<linearGradient [attr.id]="uid + lane.kind" x1="0" y1="0" x2="0" y2="1">
 							<stop [class]="'live__stop-top live__stop-top--' + lane.kind" offset="0" /><stop [class]="'live__stop-bottom live__stop-bottom--' + lane.kind" offset="1" />
 						</linearGradient>
+						@if (lane.kind === 'hr') {
+							<!-- Colours the heart-rate line by zone: the stops sit at the zone limits on this lane's scale. -->
+							<linearGradient [attr.id]="uid + 'hrzones'" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="100">
+								@for (st of hrStops(lane); track $index) { <stop [class]="'zstop zstop--' + st.zone" [attr.offset]="st.offset" /> }
+							</linearGradient>
+						}
 					</defs>
 					@if (lane.kind === 'hr') {
 						@for (band of zoneBands(lane); track band.zone) {
@@ -74,15 +80,16 @@ const average = (values: number[]) => (values.length ? Math.round(values.reduce(
 					@if (lane.kind === 'power' && thresholdY(lane); as ty) {
 						<line class="live__threshold" x1="0" x2="1000" [attr.y1]="ty" [attr.y2]="ty" vector-effect="non-scaling-stroke" />
 					}
-					@if (lane.kind !== 'cadence') { <path [attr.d]="lane.paths.area" [attr.fill]="'url(#' + uid + lane.kind + ')'" /> }
-					<path [class]="'live__line live__line--' + lane.kind" [attr.d]="lane.paths.line" vector-effect="non-scaling-stroke" />
+					@if (lane.kind === 'speed' || lane.kind === 'power') { <path [attr.d]="lane.paths.area" [attr.fill]="'url(#' + uid + lane.kind + ')'" /> }
+					<path [class]="'live__line live__line--' + lane.kind" [attr.d]="lane.paths.line" vector-effect="non-scaling-stroke"
+						[style.stroke]="lane.kind === 'hr' ? 'url(#' + uid + 'hrzones)' : null" />
 				</svg>
 				<div class="live__badge">
 					@switch (lane.kind) {
 						@case ('hr') {
 							<svg class="live__icon live__icon--hr" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-4.4-9.3-9C1 8.4 3.2 4 7.2 4c2 0 3.5 1.1 4.8 2.8C13.3 5.1 14.8 4 16.8 4c4 0 6.2 4.4 4.5 8-2.3 4.6-9.3 9-9.3 9z" /></svg>
 							<span class="live__badge-value num">{{ hr() ?? '–' }}</span>
-							<span class="live__badge-text">bpm@if (hr()) { · Zone {{ zone() }}}@if (avg().hr) { · avg {{ avg().hr }}}</span>
+							<span class="live__badge-text">bpm@if (hr()) { · <span [class]="'zone-text zone-text--' + zone()">Zone {{ zone() }}</span>}@if (avg().hr) { · avg {{ avg().hr }}}</span>
 						}
 						@case ('cadence') {
 							<span class="live__badge-value live__badge-value--sm num">{{ cadence() ?? '–' }}</span>
@@ -96,7 +103,7 @@ const average = (values: number[]) => (values.length ? Math.round(values.reduce(
 					}
 				</div>
 				@if (lane.paths.lastY !== null) {
-					<span [class]="'live__tag live__tag--' + lane.kind" [style.top.%]="lane.paths.lastY"><span class="live__tag-dot"></span><span class="live__tag-value num">{{ lane.paths.last }}</span></span>
+					<span [class]="'live__tag live__tag--' + lane.kind + (lane.kind === 'hr' && lane.paths.last ? ' live__tag--z' + zoneFor(lane.paths.last) : '')" [style.top.%]="lane.paths.lastY"><span class="live__tag-dot"></span><span class="live__tag-value num">{{ lane.paths.last }}</span></span>
 				}
 				<span class="live__scale">{{ scaleText(lane) }}</span>
 			</div>
@@ -210,22 +217,29 @@ export class LiveChartComponent {
 
 	protected scaleText(lane: Lane): string {
 		switch (lane.kind) {
-			case 'hr': return `bpm · ${lane.min}–${lane.max} · Z3–Z4 shaded`;
+			case 'hr': return `bpm · ${lane.min}–${lane.max} · coloured by zone`;
 			case 'cadence': return `spm · ${lane.min}–${lane.max}`;
 			case 'power': return `W · ${lane.min}–${lane.max}${this.prefs.thresholdPower() ? ' · dashed = threshold' : ''}`;
 			default: return '';
 		}
 	}
 
-	// Zones 3 and 4 shaded, clipped to the lane's scale.
+	// Each zone faintly shaded in its colour, clipped to the lane's scale.
 	protected zoneBands(lane: Lane): { zone: number; y: number; h: number }[] {
-		const max = this.prefs.maxHr();
-		const y = (bpm: number) => Math.min(100, Math.max(0, ((lane.max - bpm) / (lane.max - lane.min)) * 100));
-		return [3, 4].map(zone => {
-			const low = ZONE_FLOORS[zone - 1] * max;
-			const high = ZONE_FLOORS[zone] * max;
-			return { zone, y: y(high), h: y(low) - y(high) };
-		}).filter(b => b.h > 0);
+		const stops = this.hrStops(lane);
+		const bands: { zone: number; y: number; h: number }[] = [];
+		for (let i = 0; i < stops.length; i += 2) {
+			bands.push({ zone: stops[i].zone, y: stops[i].offset * 100, h: (stops[i + 1].offset - stops[i].offset) * 100 });
+		}
+		return bands;
+	}
+
+	protected hrStops(lane: Lane): { offset: number; zone: number }[] {
+		return zoneStops(this.prefs.maxHr(), lane.max, lane.min);
+	}
+
+	protected zoneFor(bpm: number): number {
+		return zoneOf(bpm, this.prefs.maxHr());
 	}
 
 	protected thresholdY(lane: Lane): number | null {
